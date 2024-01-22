@@ -2,3 +2,4 @@
 *.pt
 Model_Checkpoints/*
 Figures/*
+data/*
