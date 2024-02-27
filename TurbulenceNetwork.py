@@ -4,7 +4,7 @@ import typing as t
 
 import pyro
 import pyro.distributions as dist
-from pyro.nn import PyroModule, PyroSample, Sequential
+from pyro.nn import PyroModule, PyroSample
 
 class TurbulenceNetwork(nn.Module):
     def __init__(self, input_dim: int, output_dim: int, num_layers: int, nodes: t.List[int], dropout=0.0) -> None:
@@ -46,24 +46,50 @@ class TurbulenceNetwork(nn.Module):
 
 
 class TurbulenceNetworkBayesian(PyroModule):
-    def __init__(self, input_dim: int, output_dim: int, num_layers: int, nodes: t.List[int], layer_prior=(0,1)) -> None:
-        super(TurbulenceNetworkBayesian, self).__init__()
+    def __init__(
+            self,
+            input_dim: int, 
+            output_dim: int, 
+            h_nodes: t.List[int], 
+            layers: int,
+            device,
+            data_size: int,
+            layer_prior=(0,1), 
+            output_prior=5
+        ) -> None:
+        super().__init__()
         self.input_dim = input_dim
         self.output_dim = output_dim
-        self.layers = num_layers
-        self.nodes = nodes
+        self.device = device
+        self.output_prior = output_prior
+        self.data_size = data_size
 
-        layers = []
-        for i in range(num_layers):
-            if i == 0:
-                layers.append(PyroSample(dist.Normal(*layer_prior).expand([nodes[i], input_dim]).to_event(2)))
-                layers.append(nn.ReLU())
+        self.layer_sizes = torch.tensor([input_dim] + [h_nodes]*layers + [output_dim])
 
-            elif i == num_layers - 1:
-                layers.append(PyroSample(dist.Normal(*layer_prior)).expand([output_dim, nodes[i]]).to_event(2)))
+        layer_list = [PyroModule[nn.Linear](self.layer_sizes[i-1], self.layer_sizes[i]) for i in range(1, len(self.layer_sizes))]
+        self.layers = PyroModule[nn.ModuleList](layer_list)
 
-            else:
-                layers.append(PyroSample(dist.Normal(*layer_prior).expand([nodes[i], nodes[i-1]]).to_event(2)))
-                layers.append(nn.ReLU())
+        for layer_idx, layer in enumerate(self.layers):
+            layer.weight = PyroSample(dist.Normal(layer_prior[0], layer_prior[1]*torch.sqrt(2/self.layer_sizes[layer_idx])).expand([self.layer_sizes[layer_idx+1], self.layer_sizes[layer_idx]]).to_event(2))
+            layer.bias = PyroSample(dist.Normal(*layer_prior).expand([self.layer_sizes[layer_idx+1]]).to_event(1))
+
+        self.activation = nn.ReLU()
+
+#        self.sigma = pyro.param('sigma', torch.eye(self.output_dim, device=self.device)*self.output_prior, constraint=dist.constraints.positive)
+
+    
+    def forward(self, x: torch.Tensor, y=None) -> torch.Tensor:
+
+        x = self.activation(self.layers[0](x))
+        for layer in self.layers[1:-1]:
+            x = self.activation(layer(x))
+        mu = self.layers[-1](x)
+
+        sigma = pyro.param('sigma', torch.eye(self.output_dim, device=self.device)*self.output_prior, constraint=dist.constraints.positive)
+
+        with pyro.plate("data", size=self.data_size, subsample_size=x.shape[0]):
+            obs = pyro.sample("obs", dist.MultivariateNormal(mu, covariance_matrix=sigma), obs=y)
+        return mu
+
+
         
-        self.model = Sequential(*layers)
