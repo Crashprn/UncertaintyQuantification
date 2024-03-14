@@ -51,39 +51,46 @@ class TurbulenceNetworkBayesian(PyroModule):
             input_dim: int, 
             output_dim: int, 
             h_nodes: t.List[int], 
-            layers: int,
+            residual_blocks: int,
+            layer_per_residual: int,
             device,
             data_size: int,
             layer_prior=(0,1), 
-            output_prior=5
+            output_prior=5,
+            activation=nn.ReLU
         ) -> None:
         super().__init__()
-        self.input_dim = input_dim
-        self.output_dim = output_dim
+        self.input_dim = torch.tensor(input_dim , device=device)
+        self.output_dim = torch.tensor(output_dim, device=device)
+        self.h_nodes = torch.tensor(h_nodes, device=device)
         self.device = device
         self.output_prior = output_prior
         self.data_size = data_size
 
-        self.layer_sizes = torch.tensor([input_dim] + [h_nodes]*layers + [output_dim])
+        # Creating stem for the network
 
-        layer_list = [PyroModule[nn.Linear](self.layer_sizes[i-1], self.layer_sizes[i]) for i in range(1, len(self.layer_sizes))]
+        self.stem = PyroModule[nn.Linear](self.input_dim, self.h_nodes)
+        self.stem.weight = PyroSample(dist.Normal(layer_prior[0], layer_prior[1]*torch.sqrt(2/self.h_nodes)).expand([self.h_nodes, self.input_dim]).to_event(2))
+        self.stem.bias = PyroSample(dist.Normal(*layer_prior).expand([self.h_nodes]).to_event(1))
+
+        # Defining Residual Layers
+        layer_list = [BayesianLinearResidualBlock(self.h_nodes, self.h_nodes, layer_per_residual, layer_prior, activation) for i in range(residual_blocks)]  
         self.layers = PyroModule[nn.ModuleList](layer_list)
 
-        for layer_idx, layer in enumerate(self.layers):
-            layer.weight = PyroSample(dist.Normal(layer_prior[0], layer_prior[1]*torch.sqrt(2/self.layer_sizes[layer_idx])).expand([self.layer_sizes[layer_idx+1], self.layer_sizes[layer_idx]]).to_event(2))
-            layer.bias = PyroSample(dist.Normal(*layer_prior).expand([self.layer_sizes[layer_idx+1]]).to_event(1))
+        # Creating output layer
+        self.output = PyroModule[nn.Linear](self.h_nodes, self.output_dim)
+        self.output.weight = PyroSample(dist.Normal(layer_prior[0], layer_prior[1]*torch.sqrt(2/self.output_dim)).expand([self.output_dim, self.h_nodes]).to_event(2))
+        self.output.bias = PyroSample(dist.Normal(*layer_prior).expand([self.output_dim]).to_event(1))
 
-        self.activation = nn.ReLU()
-
-#        self.sigma = pyro.param('sigma', torch.eye(self.output_dim, device=self.device)*self.output_prior, constraint=dist.constraints.positive)
 
     
     def forward(self, x: torch.Tensor, y=None) -> torch.Tensor:
 
-        x = self.activation(self.layers[0](x))
-        for layer in self.layers[1:-1]:
-            x = self.activation(layer(x))
-        mu = self.layers[-1](x)
+        x = self.stem(x)
+
+        for layer in self.layers:
+            x = layer(x)
+        mu = self.output(x)
 
         sigma = pyro.param('sigma', torch.eye(self.output_dim, device=self.device)*self.output_prior, constraint=dist.constraints.positive)
 
@@ -92,4 +99,41 @@ class TurbulenceNetworkBayesian(PyroModule):
         return mu
 
 
-        
+
+class BayesianLinearResidual(PyroModule):
+    def __init__(self, input_dim: int, output_dim: int, layer_prior=(0,1), nonlinearity=nn.ReLU, residual = True) -> None:
+        super().__init__()
+        self.input_dim = input_dim
+        self.output_dim = output_dim
+        self.residual = residual
+
+        self.linear = PyroModule[nn.Linear](input_dim, output_dim)
+
+        self.linear.weight = PyroSample(dist.Normal(layer_prior[0], layer_prior[1]*torch.sqrt(2/self.input_dim)).expand([output_dim, input_dim]).to_event(2))
+        self.linear.bias = PyroSample(dist.Normal(*layer_prior).expand([output_dim]).to_event(1))
+
+        self.activation = nonlinearity()
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        out = self.activation(self.linear(x))
+
+        return x + out if self.residual else out
+
+
+class BayesianLinearResidualBlock(PyroModule):
+    def __init__(self, input_dim: int, output_dim: int, layers:int, layer_prior=(0,1), nonlinearity=nn.ReLU) -> None:
+        super().__init__()
+        self.input_dim = input_dim
+        self.output_dim = output_dim
+
+
+        layers = [BayesianLinearResidual(input_dim, output_dim, layer_prior, nonlinearity, residual=layers>1) for _ in range(layers)]
+        self.layers = PyroModule[nn.ModuleList](layers)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        out = x
+
+        for layer in self.layers:
+            out = layer(out)
+
+        return x + out
