@@ -1,0 +1,9 @@
+{
+    "input_dim": 2,
+    "output_dim": 3,
+    "h_nodes": 50,
+    "residual_blocks": 1,
+    "layer_per_residual": 1,
+    "layer_prior": [0.0, 5.0],
+    "output_prior": 0.05
+}
