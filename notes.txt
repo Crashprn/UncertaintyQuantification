@@ -1,0 +1,2 @@
+Papers on partial bayesian methods -mathematical
+statistic by dividing ave n_eff by samples in a chain. Should be between (0.05, 0.1)

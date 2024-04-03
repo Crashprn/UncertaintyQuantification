@@ -107,10 +107,7 @@ def plot_heat_map_3D(x_grid, y_grid, z_grid):
     ax2.set_xlabel("log(R)")
     ax2.set_ylabel("log(S)")
 
-    tick = [0.0, 0.0001, 0.002, 0.01, 0.07]
-
     cbar_1 = fig.colorbar(contour_z1, format="%.4f")
-    cbar_1.minorticks_off()
 
     cbar_2 = fig.colorbar(contour_z2, format="%.4f")
 
