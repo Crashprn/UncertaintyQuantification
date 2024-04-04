@@ -26,7 +26,7 @@ cat > $1.batch << EOF
 #SBATCH -C mil|rom
 module load miniconda3/latest
 conda activate base
-cd $current_directory
+cd $current_dir
 sleep 5
 python3 chpc_main.py --warmup_steps $warmup_steps --num_samples $samples --num_chains $num_chains --tree_depth $tree_depth
 sleep 5
@@ -34,5 +34,6 @@ exit 0
 EOF
 
 cat $1.batch
-sbatch $1.batch
+echo $current_dir
+#sbatch $1.batch
 sleep 5
