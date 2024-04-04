@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 from matplotlib import ticker, scale
-from TurbulenceClosureDataGenerator import TurbulenceClosureDataGenerator
+from src.TurbulenceClosureDataGenerator import TurbulenceClosureDataGenerator
 import numpy as np
 import math
 

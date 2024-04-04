@@ -11,11 +11,11 @@ from pyro.infer import NUTS, MCMC
 
 import os
 
-from TurbulenceNetwork import TurbulenceNetworkBayesian
-from TurbulenceClosureDataGenerator import TurbulenceClosureDataGenerator
+from src.TurbulenceNetwork import TurbulenceNetworkBayesian
+from src.TurbulenceClosureDataGenerator import TurbulenceClosureDataGenerator
 
-from Model_utils import *
-from Data_utils import *
+from src.Model_utils import *
+from src.Data_utils import *
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

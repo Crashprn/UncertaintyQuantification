@@ -1,6 +1,8 @@
 import os
 import dill
 import json
+import torch
+import pyro
 
 def create_skorch_model(model, skorch_NN_type, model_args, skorch_args):
     initialized_model = model(**model_args)
@@ -33,3 +35,16 @@ def get_params_from_json(json_file):
     with open(json_file, 'r') as f:
         params = json.load(f)
     return params
+
+def save_pyro_model(model, guide, path, chkpt_name="pyro"):
+    torch.save({"model": model.state_dict(), "guide": guide}, os.path.join(path, chkpt_name+"_model.pt"))
+    pyro.get_param_store().save(os.path.join(path, chkpt_name+"_params.pt"))
+
+def load_pyro_model(model, path, device, chkpt_name="pyro"):
+    saved_model_dict = torch.load(os.path.join(path, chkpt_name+"_model.pt"))
+    model.load_state_dict(saved_model_dict["model"])
+    guide = saved_model_dict["guide"]
+    pyro.get_param_store().load(os.path.join(path, chkpt_name+"_params.pt"), device)
+    pyro.module('module', model, update_module_params=True)
+    pyro.module('guide', guide, update_module_params=True)
+    return model, guide

@@ -2,7 +2,6 @@ import numpy as np
 import torch
 import typing as t
 import time
-from timeit import timeit
 
 
 '''
@@ -154,24 +153,6 @@ class TurbulenceClosureDataGenerator:
 
         return torch.stack((G_1, G_2, G_3), dim=1)
     
-
-if __name__ == "__main__":
-    datagen = TurbulenceClosureDataGenerator()
-    eta1 = np.random.uniform(.1, 10_000, 4_000_000)
-    eta2 = np.random.uniform(.1, 10_000, 4_000_000)
-
-    start = time.time()
-    x, y = datagen(eta1, eta2)
-    print(f"Time to generate data: {time.time() - start} seconds")
-
-    datagen = TurbulenceClosureDataGenerator(type='torch')
-    start = time.time()
-    x, y = datagen(eta1, eta2)
-    print(f"Time to generate data: {time.time() - start} seconds")
-
-    start = time.time()
-    y.reshape(3, 2_000, 2_000)
-    print(f"Time to reshape data: {time.time() - start} seconds")
 
 
     
