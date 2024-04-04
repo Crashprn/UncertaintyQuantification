@@ -34,6 +34,5 @@ exit 0
 EOF
 
 cat $1.batch
-#sbatch $1.batch
-echo $current_dir
+sbatch $1.batch
 sleep 5
