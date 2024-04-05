@@ -9,14 +9,14 @@ NP=$(($NN * $procs_per_node))
 warmup_steps=200
 samples=1000
 num_chains=4
-tree_depth=13
+tree_depth=15
 
 
 
 # Set up batch script:
 cat > $1.batch << EOF
 #!/bin/bash
-#SBATCH --time=04-00:00:00
+#SBATCH --time=09-00:00:00
 #SBATCH --nodes=$NN
 #SBATCH --ntasks=$NP
 #SBATCH -o out.$NN
@@ -35,5 +35,5 @@ EOF
 
 cat $1.batch
 echo $current_dir
-#sbatch $1.batch
+sbatch $1.batch
 sleep 5
