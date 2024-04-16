@@ -7,6 +7,7 @@ import pyro
 def create_skorch_model(model, skorch_NN_type, model_args, skorch_args):
     initialized_model = model(**model_args)
     skorch_model = skorch_NN_type(module=initialized_model, **skorch_args)
+    skorch_model.initialize()
     return skorch_model
 
 def reinitialize_model(pt_name, checkpoint_dir, model, model_type, net_params, train_params):

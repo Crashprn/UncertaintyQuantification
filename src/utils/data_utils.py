@@ -21,7 +21,9 @@ def generate_log_data(generator, scale, n, shuffle=False, gen_type="All", **kwar
         case _:
             pass
     
-    etas, G_s = generator((10**np.random.uniform(*scale, n))**2, (10**np.random.uniform(*scale, n))**2)
+    log_scale_1 = np.random.uniform(*scale, n)
+    log_scale_2 = np.random.uniform(*scale, n)
+    etas, G_s = generator((10**log_scale_1)**2, (10**log_scale_2)**2)
 
     if exclude_area:
         if "eta_1_range" in kwargs and "eta_2_range" in kwargs:

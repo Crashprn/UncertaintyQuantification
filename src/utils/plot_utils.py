@@ -10,23 +10,15 @@ def plot_data_generation_diff(etas):
     eta1 = etas[:, 0]
     eta2 = etas[:, 1]
 
-    fig, axs = plt.subplots(1, 2, figsize=(15, 5))
+    fig, axs = plt.subplots(1, 1, figsize=(5, 5))
 
-    axs[0].scatter(eta1, eta2, marker='.')
-    axs[0].set_xlabel("Log(R)")
-    axs[0].set_ylabel("Log(S)")
-
-    eta1 = (10**eta1)
-    eta2 = (10**eta2)
-
-    axs[1].scatter(eta1, eta2, marker='.')
-    axs[1].set_title("Linear Scale")
-    axs[1].set_xlabel("eta1")
-    axs[1].set_ylabel("eta2")
+    axs.scatter(np.log10(np.sqrt(eta1)), np.log10(np.sqrt(eta2)), marker='.')
+    axs.set_xlabel("Log(R)")
+    axs.set_ylabel("Log(S)")
 
     plt.show()
 
-def plot_heat_map_compare(grid_x, grid_y, target, pred):
+def plot_heat_map_compare(grid_x, grid_y, target, pred, top_title="Algebraic", bottom_title="Neural Network"):
 
     fig, axs = plt.subplots(2, 3, figsize=(20, 10))
 
@@ -53,7 +45,7 @@ def plot_heat_map_compare(grid_x, grid_y, target, pred):
         fig.colorbar(contour_z2)
         fig.colorbar(contour_z3)
     
-    fig.suptitle("SSG Algebraic Reynolds Stress Model (Top Algebraic, Bottom Neural Network)")
+    fig.suptitle(f"SSG Algebraic Reynolds Stress Model (Top {top_title}, Bottom {bottom_title})")
     plt.show()
 
     
@@ -88,7 +80,7 @@ def plot_heat_map_loss(x_grid, y_grid, target, pred):
 
     plt.show()
 
-def plot_heat_map_3D(x_grid, y_grid, z_grid):
+def plot_heat_map_3D(x_grid, y_grid, z_grid, title=""):
     fig, (ax0, ax1, ax2) = plt.subplots(1, 3, figsize=(20, 5))
     levels = 100
 
@@ -112,6 +104,8 @@ def plot_heat_map_3D(x_grid, y_grid, z_grid):
     cbar_2 = fig.colorbar(contour_z2, format="%.4f")
 
     cbar_3 = fig.colorbar(contour_z3, format="%.4f")
+
+    fig.suptitle(title)
 
     plt.show()
 

@@ -80,7 +80,7 @@ class TurbulenceClosureDataGenerator:
         # Stopping imaginary numbers in theta calculation for values of a that wont ever be used (d>=0)
         a[np.where(discriminant >= 0)] = -1
 
-        theta = np.arccos((-b/2)*np.sqrt(-a**3/27))
+        theta = np.arccos((-b/2)/np.sqrt(-a**3/27))
 
         G_1 = np.zeros(len(eta1))
 
@@ -129,7 +129,7 @@ class TurbulenceClosureDataGenerator:
         # Stopping imaginary numbers in theta calculation for values of a that wont ever be used (d>=0)
         a[torch.where(discriminant >= 0)] = -1
 
-        theta = torch.arccos((-b/2)*torch.sqrt(-a**3/27))
+        theta = torch.arccos((-b/2)/torch.sqrt(-a**3/27))
 
         G_1 = torch.zeros(len(eta1), dtype=torch.float64).to(self.device)
 

@@ -7,27 +7,27 @@ import pyro.distributions as dist
 from pyro.nn import PyroModule, PyroSample
 
 class TurbulenceNetwork(nn.Module):
-    def __init__(self, input_dim: int, output_dim: int, num_layers: int, nodes: t.List[int], dropout=0.0) -> None:
+    def __init__(self, input_dim: int, output_dim: int, num_layers: int, h_dim:int, dropout=0.0) -> None:
         super(TurbulenceNetwork, self).__init__()
         self.input_dim = input_dim
         self.output_dim = output_dim
         self.layers = num_layers
-        self.nodes = nodes
+        self.h_dim = h_dim
         self.dropout = dropout
         
         layers = []
         for i in range(num_layers):
             if i == 0:
-                layers.append(nn.Linear(input_dim, nodes[i], dtype=torch.float64))
+                layers.append(nn.Linear(input_dim, h_dim, dtype=torch.float64))
                 layers.append(nn.ReLU())
                 layers.append(nn.Dropout(self.dropout))
 
             elif i == num_layers - 1:
-                layers.append(nn.Linear(nodes[i-1], output_dim, dtype=torch.float64))
+                layers.append(nn.Linear(h_dim, output_dim, dtype=torch.float64))
                 #layers.append(nn.Tanh())
 
             else:
-                layers.append(nn.Linear(nodes[i-1], nodes[i], dtype=torch.float64))
+                layers.append(nn.Linear(h_dim, h_dim, dtype=torch.float64))
                 layers.append(nn.ReLU())
                 layers.append(nn.Dropout(self.dropout))
 
