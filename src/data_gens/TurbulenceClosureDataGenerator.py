@@ -1,5 +1,10 @@
 import numpy as np
-import torch
+try:
+    import torch
+    TORCH_EXISTS = True
+except ImportError:
+    TORCH_EXISTS = False
+
 import typing as t
 
 
@@ -32,7 +37,7 @@ class TurbulenceClosureDataGenerator:
             self.L_2 = self.C[2]/2 - 2/3
             self.L_3 = self.C[3]/2 - 1
             self.L_4 = self.C[4]/2 - 1 
-            if type.lower() == 'torch':
+            if type.lower() == 'torch' and TORCH_EXISTS:
                 self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
                 self.L_1_0 = torch.tensor([self.L_1_0], dtype=torch.float64).to(self.device)
                 self.L_1_1 = torch.tensor([self.L_1_1], dtype=torch.float64).to(self.device)
@@ -104,7 +109,7 @@ class TurbulenceClosureDataGenerator:
     '''
         Helper function for finding vectorizing determination of G_1, G_2, and G_3 for SZL model in torch
     ''' 
-    def get_szl_target_torch(self, eta1, eta2) -> torch.Tensor:
+    def get_szl_target_torch(self, eta1, eta2):
         sqrt_eta1 = torch.sqrt(2*eta1)
         sqrt_eta2 = torch.sqrt(2*eta2)
 
@@ -117,7 +122,7 @@ class TurbulenceClosureDataGenerator:
     '''
         Helper function for finding vectorizing determination of G_1, G_2, and G_3 Algebraic Reynolds Stress Model in PyTorch
     '''
-    def get_arsm_target_torch(self, eta1, eta2) -> torch.Tensor:
+    def get_arsm_target_torch(self, eta1, eta2):
         q = (self.L_1_0**2 + eta1*self.L_1_1*self.L_2 - (2/3)*eta1*(self.L_3**2) + 2*eta2*(self.L_4**2))/((eta1*self.L_1_1)**2)
         p = -(2*self.L_1_0)/(eta1*self.L_1_1)
         r = -(self.L_1_0*self.L_2)/((eta1*self.L_1_1)**2)

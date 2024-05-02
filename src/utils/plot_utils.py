@@ -22,21 +22,30 @@ def plot_heat_map_compare(grid_x, grid_y, target, pred, top_title="Algebraic", b
 
     fig, axs = plt.subplots(2, 3, figsize=(20, 10))
 
+    g1_min = min(np.min(target[0]), np.min(pred[0]))
+    g1_max = max(np.max(target[0]), np.max(pred[0]))
+
+    g2_min = min(np.min(target[1]), np.min(pred[1]))
+    g2_max = max(np.max(target[1]), np.max(pred[1]))
+
+    g3_min = min(np.min(target[2]), np.min(pred[2]))
+    g3_max = max(np.max(target[2]), np.max(pred[2]))
+
     for (ax0, ax1, ax2), z in zip(axs, [target, pred]):
         G_1 = z[0]
-        contour_z1 = ax0.contourf(grid_x, grid_y, G_1, locator=ticker.MaxNLocator(100), cmap='jet')
+        contour_z1 = ax0.contourf(grid_x, grid_y, G_1, locator=ticker.MaxNLocator(100), cmap='jet', vmin=g1_min, vmax=g1_max)
         ax0.set_title(f"G_1")
         ax0.set_xlabel("log(R)")
         ax0.set_ylabel("log(S)")
 
         G_2 = z[1]
-        contour_z2 = ax1.contourf(grid_x, grid_y, G_2, locator=ticker.MaxNLocator(100), cmap='jet')
+        contour_z2 = ax1.contourf(grid_x, grid_y, G_2, locator=ticker.MaxNLocator(100), cmap='jet', vmin=g2_min, vmax=g2_max)
         ax1.set_title(f"G_2")
         ax1.set_xlabel("log(R)")
         ax1.set_ylabel("log(S)")
 
         G_3 = z[2]
-        contour_z3 = ax2.contourf(grid_x, grid_y, G_3, locator=ticker.MaxNLocator(100), cmap='jet')
+        contour_z3 = ax2.contourf(grid_x, grid_y, G_3, locator=ticker.MaxNLocator(100), cmap='jet', vmin=g3_min, vmax=g3_max)
         ax2.set_title(f"G_3")
         ax2.set_xlabel("log(R)")
         ax2.set_ylabel("log(S)")
