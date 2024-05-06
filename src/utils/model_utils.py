@@ -32,9 +32,7 @@ def save_MCMC_model(mcmc_obj, save_dir, save_name):
 def load_MCMC_model(save_dir, save_name, kernel, sample_params):
     mcmc_obj = pyro.infer.MCMC(kernel, **sample_params)
     with open(os.path.join(save_dir, save_name), 'rb') as f:
-        samples = dill.load(f)
-    
-    mcmc_obj._samples = samples
+        mcmc_obj._samples = dill.load(f)
 
     return mcmc_obj
 
