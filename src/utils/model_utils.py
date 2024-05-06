@@ -1,6 +1,8 @@
 import os
 import dill
+import pickle
 import json
+import pyro.infer
 import torch
 import pyro
 
@@ -25,11 +27,15 @@ def save_MCMC_model(mcmc_obj, save_dir, save_name):
     mcmc_obj.sampler = None
 
     with open(os.path.join(save_dir, save_name), 'wb') as f:
-        dill.dump(mcmc_obj, f)
+        dill.dump(mcmc_obj._samples, f)
 
-def load_MCMC_model(save_dir, save_name):
+def load_MCMC_model(save_dir, save_name, kernel, sample_params):
+    mcmc_obj = pyro.infer.MCMC(kernel, **sample_params)
     with open(os.path.join(save_dir, save_name), 'rb') as f:
-        mcmc_obj = dill.load(f)
+        samples = dill.load(f)
+    
+    mcmc_obj._samples = samples
+
     return mcmc_obj
 
 def get_params_from_json(json_file):
