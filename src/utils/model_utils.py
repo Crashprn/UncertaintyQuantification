@@ -34,6 +34,8 @@ def load_MCMC_model(save_dir, save_name, kernel, sample_params):
     with open(os.path.join(save_dir, save_name), 'rb') as f:
         mcmc_obj._samples = dill.load(f)
 
+    mcmc_obj._diagnostics = ["Nan" for _ in mcmc_obj._diagnostics]
+
     return mcmc_obj
 
 def get_params_from_json(json_file):
