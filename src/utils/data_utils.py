@@ -1,5 +1,7 @@
 import numpy as np
 
+from sklearn.preprocessing import StandardScaler
+
 def generate_log_data(generator, scale, n, shuffle=False, gen_type="All", **kwargs):
     exclude_area = False
     include_area = False
@@ -79,7 +81,64 @@ def generate_log_data(generator, scale, n, shuffle=False, gen_type="All", **kwar
     return etas, G_s
     
     
+class CustomScalerX:
+    epsilon = 1e-8
+
+    def __init__(self):
+        self.scaler = StandardScaler()
     
+    def fit(self, X):
+        X_new = np.log10(X)
 
+        self.scaler = self.scaler.fit(X_new)
 
+        return self
+    
+    def transform(self, X):
+        X_new = np.log10(X)
+
+        X_new = self.scaler.transform(X_new)
+
+        return X_new
+
+    def inverse_transform(self, X, y):
+        x = self.scaler.inverse_transform(X)
+        
+        x = np.exp(X)
+
+        return x
+
+class CustomScalerY:
+    def __init__(self):
+        self.epsilon = 1e-8
+        self.scaler = StandardScaler()
+    
+    def fit(self, Y):
+        y_new = np.zeros_like(Y)
+        y_new[:, 0] = np.log(-(Y[:, 0] - self.epsilon))
+        y_new[:, 1] = np.log(-(Y[:, 1] - self.epsilon))
+        y_new[:, 2] = np.log(Y[:, 2] + self.epsilon)
+
+        self.scaler = self.scaler.fit(y_new)
+
+        return self
+
+    def transform(self, Y):
+        y_new = np.zeros_like(Y)
+        y_new[:, 0] = np.log(-(Y[:, 0] - self.epsilon))
+        y_new[:, 1] = np.log(-(Y[:, 1] - self.epsilon))
+        y_new[:, 2] = np.log(Y[:, 2] + self.epsilon)
+
+        y_new = self.scaler.transform(y_new)
+
+        return y_new
+    
+    def inverse_transform(self, Y):
+        y = self.scaler.inverse_transform(Y)
+
+        y[:, 0] = -np.exp(y[:, 0])
+        y[:, 1] = -np.exp(y[:, 1])
+        y[:, 2] = np.exp(y[:, 2])
+
+        return y
 

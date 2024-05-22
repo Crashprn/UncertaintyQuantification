@@ -7,35 +7,37 @@ import pyro.distributions as dist
 from pyro.nn import PyroModule, PyroSample
 
 class TurbulenceNetwork(nn.Module):
-    def __init__(self, input_dim: int, output_dim: int, num_layers: int, h_dim:int, dropout:float=0.0) -> None:
+    def __init__(self, input_dim: int, output_dim: int, num_layers: int, h_dim:int, dropout:list[float]=None) -> None:
         super(TurbulenceNetwork, self).__init__()
         self.input_dim = input_dim
         self.output_dim = output_dim
         self.layers = num_layers
         self.h_dim = h_dim
-        self.dropout = dropout
+        if dropout is None:
+            self.dropout = [0.0]*num_layers
+        else:
+            self.dropout = dropout
         
         layers = []
         for i in range(num_layers):
             if i == 0:
                 layers.append(nn.Linear(input_dim, h_dim))
                 layers.append(nn.ReLU())
-                layers.append(nn.Dropout(dropout))
+                layers.append(nn.Dropout(self.dropout[i]))
             elif i == num_layers - 1:
                 layers.append(nn.Linear(h_dim, output_dim))
             else:
                 layers.append(nn.Linear(h_dim, h_dim))
                 layers.append(nn.ReLU())
-                layers.append(nn.Dropout(dropout))
+                layers.append(nn.Dropout(self.dropout[i]))
 
 
         self.layers = nn.Sequential(*layers)
                 
     
-    def dropout_on(self, p):
+    def dropout_on(self):
         for m in self.layers.modules():
             if isinstance(m, nn.Dropout):
-                m.p = p
                 m.train()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
