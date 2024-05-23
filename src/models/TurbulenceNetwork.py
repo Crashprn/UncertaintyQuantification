@@ -50,7 +50,7 @@ class TurbulenceNetworkBayesian(PyroModule):
             self,
             input_dim: int, 
             output_dim: int, 
-            h_nodes: t.List[int], 
+            h_nodes: int, 
             num_layers: int,
             device,
             data_size: int,
