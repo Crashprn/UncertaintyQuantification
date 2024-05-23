@@ -34,7 +34,7 @@ def load_MCMC_model(save_dir, save_name, kernel, sample_params):
     with open(os.path.join(save_dir, save_name), 'rb') as f:
         mcmc_obj._samples = dill.load(f)
 
-    mcmc_obj._diagnostics = ["Nan" for _ in mcmc_obj._diagnostics]
+    mcmc_obj._diagnostics = [{'divergences':[], 'acceptance rate': 0.00} for _ in mcmc_obj._diagnostics]
 
     return mcmc_obj
 

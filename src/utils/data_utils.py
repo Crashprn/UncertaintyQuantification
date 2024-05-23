@@ -88,14 +88,14 @@ class CustomScalerX:
         self.scaler = StandardScaler()
     
     def fit(self, X):
-        X_new = np.log10(X)
+        X_new = np.log(X)
 
         self.scaler = self.scaler.fit(X_new)
 
         return self
     
     def transform(self, X):
-        X_new = np.log10(X)
+        X_new = np.log(X)
 
         X_new = self.scaler.transform(X_new)
 
