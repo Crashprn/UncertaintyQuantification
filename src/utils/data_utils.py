@@ -141,4 +141,13 @@ class CustomScalerY:
         y[:, 2] = np.exp(y[:, 2])
 
         return y
+    
+    def inverse_transform_std(self, Y):
+        y = Y * self.scaler.scale_
+
+        y[:, 0] = -np.exp(y[:, 0])
+        y[:, 1] = -np.exp(y[:, 1])
+        y[:, 2] = np.exp(y[:, 2])
+
+        return y
 
