@@ -19,7 +19,6 @@ cat > $1.batch << EOF
 #SBATCH --time=00-03:00:00
 #SBATCH --nodes=$NN
 #SBATCH --ntasks=$NP
-#SBATCH -p notchpeak
 #SBATCH -o out.$NN
 #SBATCH -e err.$NN
 #SBATCH --account=usumae-np
