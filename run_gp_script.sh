@@ -18,11 +18,11 @@ cat > $1.batch << EOF
 #!/bin/bash
 #SBATCH --time=00-03:00:00
 #SBATCH --nodes=$NN
-#SBATCH --mem=64000
+#SBATCH --mem=120000
 #SBATCH -o out.$NN
 #SBATCH -e err.$NN
-#SBATCH --account=dutta
-#SBATCH --partition=kingspeak
+#SBATCH --account=usumae-np
+#SBATCH --partition=usumae-np
 module load miniconda3/latest
 conda init
 conda activate base
