@@ -121,4 +121,6 @@ def get_data(n_points):
 if __name__ == "__main__":
     parser = parse_args()
 
+    print(parser.verbose)
+
     train_test(parser)
