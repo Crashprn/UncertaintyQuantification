@@ -21,8 +21,8 @@ cat > $1.batch << EOF
 #SBATCH --ntasks=$NP
 #SBATCH -o out.$NN
 #SBATCH -e err.$NN
-#SBATCH --account=usumae-np
-#SBATCH --partition=usumae-np
+#SBATCH --account=dutta
+#SBATCH --partition=kingspeak
 #SBATCH -C mil|rom
 module load miniconda3/latest
 conda activate base
