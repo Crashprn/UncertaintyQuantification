@@ -31,6 +31,7 @@ def parse_args():
     return parser.parse_args()
 
 def train_test(parser):
+
     if parser.verbose:
         print(f"Creating {parser.n_data} datapoints")
     etas_train, gs_train = get_data(parser.n_data)
@@ -40,8 +41,8 @@ def train_test(parser):
 
     x_scaler = CustomScalerX().fit(etas_train)
     y_scaler = StandardScaler().fit(gs_train)
-    x_train = x_scaler.transform(etas_train)
-    y_train = y_scaler.transform(gs_train)
+    x_train = x_scaler.transform(etas_train).astype(np.float32)
+    y_train = y_scaler.transform(gs_train).astype(np.float32)
 
     kernel = 1.0*RBF(length_scale=1.0)
     gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=parser.n_restarts)

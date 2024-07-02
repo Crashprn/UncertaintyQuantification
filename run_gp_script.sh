@@ -22,8 +22,8 @@ cat > $1.batch << EOF
 #SBATCH -e err.$NN
 #SBATCH --account=dutta
 #SBATCH --partition=kingspeak
-#SBATCH -C mil|rom
 module load miniconda3/latest
+conda init
 conda activate base
 cd $current_dir
 sleep 5
