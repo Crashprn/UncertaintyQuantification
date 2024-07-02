@@ -18,6 +18,7 @@ cat > $1.batch << EOF
 #!/bin/bash
 #SBATCH --time=00-03:00:00
 #SBATCH --nodes=$NN
+#SBATCH --mem=64000
 #SBATCH -o out.$NN
 #SBATCH -e err.$NN
 #SBATCH --account=dutta
