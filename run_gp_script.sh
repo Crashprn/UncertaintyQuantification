@@ -24,7 +24,6 @@ cat > $1.batch << EOF
 #SBATCH --account=usumae-np
 #SBATCH --partition=usumae-np
 module load miniconda3/latest
-conda init
 conda activate base
 cd $current_dir
 sleep 5
