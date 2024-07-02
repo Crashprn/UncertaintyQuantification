@@ -86,8 +86,15 @@ def get_test_data(parser):
     x_grid, y_grid = np.meshgrid(np.linspace(*DATA_BOUNDS_LOG, dim),np.linspace(*DATA_BOUNDS_LOG, dim))
     eta1 = (10**x_grid.flatten())**2
     eta2 = (10**y_grid.flatten())**2
+    
+    if parser.verbose:
+        print("---> Generating Test Data")
 
-    gen = TurbulenceClosureDataGenerator(model="SSG", type='torch')
+    gen = TurbulenceClosureDataGenerator(model="SSG", type='numpy')
+
+    if parser.verbose:
+        print("---> Finished Generating Test Data")
+
     etas, G_s = gen(eta1, eta2)
 
     return etas, G_s
