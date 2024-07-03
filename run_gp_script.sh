@@ -17,9 +17,9 @@ dim_y=0
 # Set up batch script:
 cat > $1.batch << EOF
 #!/bin/bash
-#SBATCH --time=03:00:00
+#SBATCH --time=06:00:00
 #SBATCH --nodes=$NN
-#SBATCH --mem=200000
+#SBATCH --mem=300000
 #SBATCH -o out.$NN
 #SBATCH -e err.$NN
 #SBATCH --account=usumae-np
