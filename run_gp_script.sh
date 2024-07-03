@@ -11,6 +11,7 @@ n_data=80000
 n_restarts=10
 grid_dim=700
 verbose=1
+dim_y=0
 
 
 # Set up batch script:
@@ -27,7 +28,7 @@ module load miniconda3/latest
 conda activate base
 cd $current_dir
 sleep 5
-python3 -u chpc_gp_main.py --save_dir $save_dir --n_data $n_data --n_restarts $n_restarts --grid_dim $grid_dim --verbose $verbose
+python3 -u chpc_gp_main.py --save_dir $save_dir --n_data $n_data --n_restarts $n_restarts --grid_dim $grid_dim --verbose $verbose --dim_y $dim_y
 sleep 5
 exit 0
 EOF

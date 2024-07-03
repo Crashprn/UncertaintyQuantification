@@ -27,6 +27,7 @@ def parse_args():
     parser.add_argument('--n_restarts', type=int, default=10)
     parser.add_argument('--grid_dim', type=int, default=700)
     parser.add_argument('--verbose', '-v', type=int, default=1)
+    parser.add_argument('--dim_y', type=int, default=0)
 
     return parser.parse_args()
 
@@ -42,7 +43,7 @@ def train_test(parser):
     x_scaler = CustomScalerX().fit(etas_train)
     y_scaler = StandardScaler().fit(gs_train)
     x_train = x_scaler.transform(etas_train).astype(np.float32)
-    y_train = y_scaler.transform(gs_train).astype(np.float32)
+    y_train = y_scaler.transform(gs_train).astype(np.float32)[:,parser.dim_y]
 
     kernel = 1.0*RBF(length_scale=1.0)
     gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=parser.n_restarts)
@@ -75,8 +76,8 @@ def train_test(parser):
     if parser.verbose:
         print("---> Saving Predictions to ", save_dir)
 
-    np.save(os.path.join(save_dir, "Mean.npy"), pred_mean)
-    np.save(os.path.join(save_dir, "Std.npy"), pred_std)
+    np.save(os.path.join(save_dir, f"Mean{parser.dim_y}.npy"), pred_mean)
+    np.save(os.path.join(save_dir, f"Std{parser.dim_y}.npy"), pred_std)
 
     if parser.verbose:
         print("---> Predictions Saved")
