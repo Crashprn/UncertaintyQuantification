@@ -46,7 +46,7 @@ def train_test(parser):
     y_train = y_scaler.transform(gs_train).astype(np.float32)[:,parser.dim_y]
 
     kernel = 1.0*RBF(length_scale=1.0)
-    gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=parser.n_restarts)
+    gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=parser.n_restarts, copy_X_train=False)
 
     if parser.verbose:
         print("---> Fitting Gaussian Process")
