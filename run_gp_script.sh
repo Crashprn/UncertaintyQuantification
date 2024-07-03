@@ -19,7 +19,7 @@ cat > $1.batch << EOF
 #!/bin/bash
 #SBATCH --time=06:00:00
 #SBATCH --nodes=$NN
-#SBATCH --mem=300000
+#SBATCH --mem=500000
 #SBATCH -o out.$NN
 #SBATCH -e err.$NN
 #SBATCH --account=usumae-np
