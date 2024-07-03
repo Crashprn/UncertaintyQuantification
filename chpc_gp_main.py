@@ -23,7 +23,7 @@ def parse_args():
     )
 
     parser.add_argument('--save_dir', '-d', type=str, default='data')
-    parser.add_argument('--n_data', type=int, default=80_000)
+    parser.add_argument('--n_data', type=int, default=5_000)
     parser.add_argument('--n_restarts', type=int, default=10)
     parser.add_argument('--grid_dim', type=int, default=700)
     parser.add_argument('--verbose', '-v', type=int, default=1)
