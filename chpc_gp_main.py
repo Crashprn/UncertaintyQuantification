@@ -36,6 +36,7 @@ def train_test(parser):
     if parser.verbose:
         print(f"Creating {parser.n_data} datapoints")
     etas_train, gs_train = get_data(parser.n_data)
+    gs_train = gs_train[:, parser.dim_y].reshape(-1, 1)
 
     if parser.verbose:
         print("Scaling Data")
@@ -43,7 +44,7 @@ def train_test(parser):
     x_scaler = CustomScalerX().fit(etas_train)
     y_scaler = StandardScaler().fit(gs_train)
     x_train = x_scaler.transform(etas_train).astype(np.float32)
-    y_train = y_scaler.transform(gs_train).astype(np.float32)[:,parser.dim_y]
+    y_train = y_scaler.transform(gs_train).astype(np.float32)
 
     kernel = 1.0*RBF(length_scale=1.0)
     gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=parser.n_restarts, copy_X_train=False)
@@ -61,10 +62,18 @@ def train_test(parser):
 
     etas_test = x_scaler.transform(etas_test)
 
-    pred_mean, pred_std = gp.predict(etas_test, return_std=True)
+    pred_mean = []
+    pred_std = []
 
-    pred_mean = y_scaler.inverse_transform(pred_mean)
-    pred_std = pred_std * y_scaler.scale_
+    num_splits = 100
+
+    for x_split in np.array_split(etas_test, num_splits):
+        mean, std = gp.predict(x_split, return_std=True)
+        pred_mean.append(y_scaler.inverse_transform(mean.reshape(-1, 1)))
+        pred_std.append(std * y_scaler.scale_)
+    
+    pred_mean = np.concatenate(pred_mean)
+    pred_std = np.concatenate(pred_std)
 
     if parser.verbose:
         print("---> Predictions Complete")
@@ -121,7 +130,5 @@ def get_data(n_points):
 
 if __name__ == "__main__":
     parser = parse_args()
-
-    print(parser.verbose)
 
     train_test(parser)
