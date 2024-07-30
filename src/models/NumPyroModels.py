@@ -40,4 +40,4 @@ class NumPyroModel:
                 X = jnp.dot(X, w) + b
 
         with numpyro.plate("data", self.data_size):
-            numpyro.sample("Y", dist.MultivariateNormal(X, self.sigma), obs=Y)
+            numpyro.sample("Y", dist.MultivariateNormal(X, covariance_matrix=self.sigma), obs=Y)
