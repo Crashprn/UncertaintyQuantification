@@ -3,7 +3,8 @@ import argparse
 import numpy as np
 import numpyro
 from numpyro import distributions as dist
-from numpyro.infer import MCMC, HMC, Predictive
+from numpyro.infer import MCMC, HMC
+from numpyro.infer.hmc import hmc
 from numpyro.infer.initialization import init_to_value
 
 import jax
@@ -46,7 +47,6 @@ def load_initialization_params(file_path):
 
 def find_last_state(save_dir, file_prefix):
     files_in_chkpt_dir = os.listdir(save_dir)
-    checkpoint_exists = False
     for file in files_in_chkpt_dir:
         if file.startswith(file_prefix + "_last_state_"):
             if parser.verbose:
