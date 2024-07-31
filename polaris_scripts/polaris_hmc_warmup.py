@@ -31,7 +31,7 @@ def parse_args():
     )
 
     parser.add_argument('--chkpt_dir', '-d', type=str, default='Model_Checkpoints/HMC')
-    parser.add_argument('--n_data', type=int, default=2_000)
+    parser.add_argument('--n_data', type=int, default=80_000)
     parser.add_argument('--verbose', '-v', type=int, default=1)
     parser.add_argument('--param_file', type=str, default='run_params.json')
     parser.add_argument('--init_file', type=str, default='HMC_Initialize_large.pkl')
