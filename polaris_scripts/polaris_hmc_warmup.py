@@ -1,26 +1,27 @@
 import argparse
+import pickle
+import os
+import sys
 
 import numpy as np
 import numpyro
 from numpyro import distributions as dist
-from numpyro.infer import MCMC, HMC
 from numpyro.infer.hmc import hmc
-from numpyro.infer.initialization import init_to_value
+from numpyro.infer.initialization import init_to_value, init_to_uniform
+from numpyro.infer.util import initialize_model
+from numpyro.util import fori_collect
 
 import jax
 import jax.numpy as jnp
 from jax import random
 
+sys.path.append(os.path.abspath('.'))
+
 from src.models.NumPyroModels import NumPyroModel
 from src.data_gens.TurbulenceClosureDataGenerator import TurbulenceClosureDataGenerator
 from src.utils.data_utils import *
 from src.utils.numpyro_utils import *
-
-import pickle
-import os
-
 from src.utils.data_utils import *
-
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -45,55 +46,6 @@ def load_initialization_params(file_path):
 
     return init_dict
 
-def find_last_state(save_dir, file_prefix):
-    files_in_chkpt_dir = os.listdir(save_dir)
-    for file in files_in_chkpt_dir:
-        if file.startswith(file_prefix + "_last_state_"):
-            if parser.verbose:
-                print(f"Found previous state in {parser.chkpt_dir}")
-            return True
-
-    return False
-    
-        
-
-def train(parser, mcmc, save_dir, save_prefix):
-    if parser.verbose:
-        print(f"Creating {parser.n_data} datapoints")
-    etas_train, gs_train = get_data(parser.n_data)
-
-    if parser.verbose:
-        print("Scaling Data")
-    x_scaler = CustomScalerX().fit(etas_train)
-    y_scaler = CustomScalerY().fit(gs_train)
-
-    if parser.verbose:
-        print(f"Using devices: {jax.devices()}")
-    x = jnp.array(x_scaler.transform(etas_train), dtype=jnp.float32)
-    y = jnp.array(y_scaler.transform(gs_train), dtype=jnp.float32)
-
-    if find_last_state(save_dir, save_prefix):
-        mcmc = load_numpyro_mcmc(save_dir, save_prefix, mcmc, parser.verbose)
-        rng = mcmc.post_warmup_state.rng_key
-    else:
-        rng = random.PRNGKey(0)
-    
-    if parser.verbose:
-        print("---> Beginning Training")
-
-    mcmc.run(rng, x, y)
-
-    if parser.verbose:
-        print("---> Training Complete")
-        print(f"---> Saving MCMC object to {save_dir} as {save_prefix}")
-
-    save_numpyro_mcmc(mcmc, save_dir, save_prefix)
-
-    if parser.verbose:
-        print("---> Successfully Saved MCMC Object")
-
-    
-
 def get_data(n_points):
     SSG_gen = TurbulenceClosureDataGenerator('SSG')
 
@@ -115,10 +67,80 @@ def get_data(n_points):
 
     return etas_train, gs_train
 
+def run_warmup(parser, model, init_strat, hmc_params, mcmc_params, warmup_iters, save_dir, save_prefix):
+    if parser.verbose:
+        print(f"Creating {parser.n_data} datapoints")
+    etas_train, gs_train = get_data(parser.n_data)
 
-if __name__ == "__main__":
+    if parser.verbose:
+        print("Scaling Data")
+    x_scaler = CustomScalerX().fit(etas_train)
+    y_scaler = CustomScalerY().fit(gs_train)
+
+    if parser.verbose:
+        print(f"Using devices: {jax.devices()}")
+    x = jnp.array(x_scaler.transform(etas_train), dtype=jnp.float32)
+    y = jnp.array(y_scaler.transform(gs_train), dtype=jnp.float32)
+
+    init_rng_key, sample_rng_key = random.split(random.PRNGKey(0))
+    inverse_mass_matrix = None
+    model_info = initialize_model(init_rng_key, model, init_strategy=init_strat, model_args=(x, y))
+    init_params = model_info.param_info
+
+    init_kernel, sample_kernel = hmc(model_info.potential_fn, algo="HMC")
+
+    ## Loading Previous warmup state if it exists
+    if os.path.exists(os.path.join(save_dir, f"{save_prefix}_warm_state.pkl")):
+        if parser.verbose:
+            print(f"Found Warmup State {save_prefix}_warm_state.pkl at {save_dir}")
+        hmc_state = pickle.load(open(os.path.join(save_dir, f"{save_prefix}_warm_state.pkl"), "rb"))
+        ## Reinitializing kernel because of global variables
+        _ = init_kernel(
+            init_params=hmc_state.z,
+            num_warmup=mcmc_params['num_warmup'],
+            rng_key=hmc_state.rng_key,
+            inverse_mass_matrix=hmc_state.adapt_state.inverse_mass_matrix,
+            **hmc_params
+        )
+    else:
+        hmc_state = init_kernel(
+            init_params=init_params, 
+            num_warmup=mcmc_params['num_warmup'],
+            rng_key=sample_rng_key,
+            **hmc_params
+        )
+
+    remaining_iterations = mcmc_params['num_warmup'] - hmc_state.i
+
+    num_iters = warmup_iters if warmup_iters < remaining_iterations else remaining_iterations
+
+    if num_iters <= 0:
+        print(f"Already completed {mcmc_params['num_warmup']} warmup iterations")
+        return
+
+    hmc_states = fori_collect(
+        num_iters - 1,
+        num_iters,
+        sample_kernel,
+        hmc_state,
+        transform=lambda hmc_state: model_info.postprocess_fn(hmc_state.z),
+        return_last_val=True
+    )
+
+    if parser.verbose:
+        print(f"Saving Warmup State to {save_dir} as {save_prefix}_warm_state.pkl")
+    pickle.dump(hmc_states[1], open(os.path.join(save_dir, f"{save_prefix}_warm_state.pkl"), "wb"))
+
+    if parser.verbose:
+        if  remaining_iterations > warmup_iters:
+            print(f"Finished Warmup after {num_iters} iterations")
+        else:
+            print(f"Finished {warmup_iters} warmup iterations, {remaining_iterations-warmup_iters} remaining")
+
+
+if __name__ == '__main__':
     parser = parse_args()
-
+    
     cwd = os.getcwd()
 
     save_dir = os.path.join(cwd, parser.chkpt_dir)
@@ -146,33 +168,24 @@ if __name__ == "__main__":
 
     ## Creating HMC object
     hmc_params = params['hmc_params']
-    hmc_params['model'] = net
 
     initialize_file_path = os.path.join(save_dir, parser.init_file) 
     if not os.path.exists(initialize_file_path):
         if parser.verbose:
             print(f"Could not find initialization file at: {initialize_file_path}")
+        init_strat = init_to_uniform
     else:
         if parser.verbose:
             print(f"Loading initialization from {initialize_file_path}")
         net_init_params = pickle.load(open(initialize_file_path, "rb"))
-        hmc_params['init_strategy'] = init_to_value(values=load_initialization_params(initialize_file_path))
-
-    hmc = HMC(**hmc_params)
-
-    ## Creating MCMC object
+        init_strat = init_to_value(values=load_initialization_params(initialize_file_path))
 
     mcmc_params = params['mcmc_params']
-
-    mcmc = MCMC(hmc, **mcmc_params)
 
     ## Creating save prefix
     save_prefix = f"HMC_{mcmc_params['num_samples']}_{mcmc_params['num_warmup']}_{int(hmc_params['trajectory_length']/hmc_params['step_size'])}"
 
-    train(parser, mcmc, save_dir, save_prefix)
-
-    
-
+    run_warmup(parser, net, init_strat, hmc_params, mcmc_params, params['warmup_iter_block'], save_dir, save_prefix)
 
 
 
