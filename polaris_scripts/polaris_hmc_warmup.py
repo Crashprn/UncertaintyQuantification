@@ -132,7 +132,7 @@ def run_warmup(parser, model, init_strat, hmc_params, mcmc_params, warmup_iters,
     pickle.dump(hmc_states[1], open(os.path.join(save_dir, f"{save_prefix}_warm_state.pkl"), "wb"))
 
     if parser.verbose:
-        if  remaining_iterations > warmup_iters:
+        if  remaining_iterations < warmup_iters:
             print(f"Finished Warmup after {num_iters} iterations")
         else:
             print(f"Finished {warmup_iters} warmup iterations, {remaining_iterations-warmup_iters} remaining")
