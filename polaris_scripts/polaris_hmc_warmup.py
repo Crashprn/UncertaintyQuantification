@@ -7,6 +7,7 @@ import numpy as np
 import numpyro
 from numpyro import distributions as dist
 from numpyro.infer.hmc import hmc
+from numpyro.infer import HMC
 from numpyro.infer.initialization import init_to_value, init_to_uniform
 from numpyro.infer.util import initialize_model
 from numpyro.util import fori_collect
@@ -67,6 +68,11 @@ def get_data(n_points):
 
     return etas_train, gs_train
 
+def get_diagnostics_str(state):
+    return "{} steps of size {:.2e}. acc. prob={:.2f}".format(
+        int(state.trajectory_length/state.adapt_state.step_size), state.adapt_state.step_size, state.mean_accept_prob
+    )
+
 def run_warmup(parser, model, init_strat, hmc_params, mcmc_params, warmup_iters, save_dir, save_prefix):
     if parser.verbose:
         print(f"Creating {parser.n_data} datapoints")
@@ -118,11 +124,16 @@ def run_warmup(parser, model, init_strat, hmc_params, mcmc_params, warmup_iters,
         print(f"Already completed {mcmc_params['num_warmup']} warmup iterations")
         return
 
+    diagnostics = (
+            lambda x: get_diagnostics_str(x)
+    )
+
     hmc_states = fori_collect(
         num_iters - 1,
         num_iters,
         sample_kernel,
         hmc_state,
+        diagnostics_fn=diagnostics,
         transform=lambda hmc_state: model_info.postprocess_fn(hmc_state.z),
         return_last_val=True
     )
