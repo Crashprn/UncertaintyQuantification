@@ -58,8 +58,8 @@ def find_post_warm_state(save_dir, file_prefix):
             sample_state_found = True
     if sample_state_found:
         if parser.verbose:
-            print(f"Found previous sample state {os.path.join(save_dir, file_prefix + f"_last_state.pkl")}")
-        return sample_state_found, os.path.join(save_dir, file_prefix + f"_last_state.pkl")
+            print(f"Found previous sample state {os.path.join(save_dir, file_prefix + "_last_state.pkl")}")
+        return sample_state_found, os.path.join(save_dir, file_prefix + "_last_state.pkl")
     
     warmup_state_found = os.path.exists(os.path.join(save_dir, file_prefix + "_warm_state.pkl"))
     if warmup_state_found:
