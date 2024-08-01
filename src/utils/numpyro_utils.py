@@ -1,41 +1,36 @@
-from numpyro.infer import HMC, MCMC
+import jax.numpy as jnp
 
 import pickle
 import json
 import os
 
-def load_numpyro_mcmc(save_dir, file_prefix, mcmc, verbose=True):
-    save_path = os.path.join(save_dir, file_prefix)
-    i = 0 
-    while os.path.exists(save_path + f"_last_state_{i}.pickle"):
-        i += 1
-    i -= 1
-
+def load_numpyro_mcmc(save_path, verbose=True):
     if verbose:
-        print(f"Loading MCMC from {save_path + f'_last_state_{i}.pickle'}")
+        print(f"Loading MCMC from {save_path}")
 
-    mcmc_last_state = pickle.load(open(save_path + f"_last_state_{i}.pickle", "rb"))
-    mcmc.post_warmup_state = mcmc_last_state
-    return mcmc
+    mcmc_last_state = pickle.load(open(save_path, "rb"))
+    return mcmc_last_state
 
 def save_numpyro_mcmc(mcmc, save_dir, file_prefix):
-    mcmc.sampler= None
-    samples = mcmc.get_samples()
+    samples = mcmc.get_samples(group_by_chain=mcmc.num_chains > 1)
     last_state = mcmc.last_state
 
     save_path = os.path.join(save_dir, file_prefix)
-    samples_path = save_path + "_samples_"
-    last_state_path = save_path + "_last_state_"
+    samples_path = save_path + "_samples.pkl"
+    last_state_path = save_path + "_last_state.pkl"
 
-    i = 0
-    while True:
-        if os.path.exists(samples_path + str(i) + ".pickle") or os.path.exists(last_state_path + str(i) + ".pickle"):
-            i += 1
-        else:
-            break
+    if os.path.exists(samples_path):
+        old_samples = pickle.load(open(samples_path, "rb"))
+        for key in samples.keys():
+            if len(samples[key].shape) != len(old_samples[key].shape):
+                print(f"Shape mismatch for {key}, old samples have shape {old_samples[key].shape} and new samples have shape {samples[key].shape} saves have incompatible number of chains")
+            if mcmc.num_chains > 1:
+                samples[key] = jnp.concatenate([old_samples[key], samples[key]], axis=1)
+            else:
+                samples[key] = jnp.concatenate([old_samples[key], samples[key]], axis=0)
 
-    pickle.dump(samples, open(samples_path + f"{i}.pickle", "wb"))
-    pickle.dump(last_state, open(last_state_path + f"{i}.pickle", "wb"))
+    pickle.dump(samples, open(samples_path, "wb"))
+    pickle.dump(last_state, open(last_state_path, "wb"))
 
 def get_params_from_json(json_file):
     with open(json_file, 'r') as f:

@@ -47,18 +47,28 @@ def load_initialization_params(file_path):
 
     return init_dict
 
-def find_last_state(save_dir, file_prefix):
+def find_post_warm_state(save_dir, file_prefix):
+    ## Checking for previous sample state
+    sample_state_found = False
     files_in_chkpt_dir = os.listdir(save_dir)
     for file in files_in_chkpt_dir:
-        if file.startswith(file_prefix + "_last_state_"):
+        if file.startswith(file_prefix + "_last_state"):
             if parser.verbose:
                 print(f"Found previous state in {parser.chkpt_dir}")
-            return True
-
-    return False
+            sample_state_found = True
+    if sample_state_found:
+        if parser.verbose:
+            print(f"Found previous sample state {os.path.join(save_dir, file_prefix + f"_last_state.pkl")}")
+        return sample_state_found, os.path.join(save_dir, file_prefix + f"_last_state.pkl")
     
-        
+    warmup_state_found = os.path.exists(os.path.join(save_dir, file_prefix + "_warm_state.pkl"))
+    if warmup_state_found:
+        if parser.verbose:
+            print(f"Found warmup state in {parser.chkpt_dir}")
+        return warmup_state_found, os.path.join(save_dir, file_prefix + "_warm_state.pkl")
 
+    return False, None
+    
 def train(parser, mcmc, save_dir, save_prefix):
     if parser.verbose:
         print(f"Creating {parser.n_data} datapoints")
@@ -74,8 +84,10 @@ def train(parser, mcmc, save_dir, save_prefix):
     x = jnp.array(x_scaler.transform(etas_train), dtype=jnp.float32)
     y = jnp.array(y_scaler.transform(gs_train), dtype=jnp.float32)
 
-    if find_last_state(save_dir, save_prefix):
-        mcmc = load_numpyro_mcmc(save_dir, save_prefix, mcmc, parser.verbose)
+    is_sample, save_file_path = find_post_warm_state(save_dir, save_prefix)
+    if is_sample:
+        state = load_numpyro_mcmc(save_file_path, parser.verbose)
+        mcmc.post_warmup_state = state
         rng = mcmc.post_warmup_state.rng_key
     else:
         rng = random.PRNGKey(0)

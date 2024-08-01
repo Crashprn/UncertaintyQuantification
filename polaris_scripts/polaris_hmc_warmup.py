@@ -107,7 +107,6 @@ def run_warmup(parser, model, init_strat, hmc_params, mcmc_params, warmup_iters,
             rng_key=hmc_state.rng_key,
             inverse_mass_matrix=hmc_state.adapt_state.inverse_mass_matrix,
             **hmc_params,
-            num_steps=int(hmc_params['trajectory_length']/hmc_params['step_size'])
         )
     else:
         hmc_state = init_kernel(
@@ -115,7 +114,6 @@ def run_warmup(parser, model, init_strat, hmc_params, mcmc_params, warmup_iters,
             num_warmup=mcmc_params['num_warmup'],
             rng_key=sample_rng_key,
             **hmc_params,
-            num_steps=int(hmc_params['trajectory_length']/hmc_params['step_size'])
         )
 
     remaining_iterations = mcmc_params['num_warmup'] - hmc_state.i
