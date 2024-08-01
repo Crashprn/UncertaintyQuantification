@@ -54,17 +54,17 @@ def find_post_warm_state(save_dir, file_prefix):
     for file in files_in_chkpt_dir:
         if file.startswith(file_prefix + "_last_state"):
             if parser.verbose:
-                print(f"Found previous state in {parser.chkpt_dir}")
+                print(f"Found previous state in {save_dir}")
             sample_state_found = True
     if sample_state_found:
         if parser.verbose:
-            print(f"Found previous sample state {os.path.join(save_dir, file_prefix + "_last_state.pkl")}")
+            print(f"Found previous sample state {os.path.join(save_dir, file_prefix + '_last_state.pkl')}")
         return sample_state_found, os.path.join(save_dir, file_prefix + "_last_state.pkl")
     
     warmup_state_found = os.path.exists(os.path.join(save_dir, file_prefix + "_warm_state.pkl"))
     if warmup_state_found:
         if parser.verbose:
-            print(f"Found warmup state in {parser.chkpt_dir}")
+            print(f"Found warmup state in {save_dir}")
         return warmup_state_found, os.path.join(save_dir, file_prefix + "_warm_state.pkl")
 
     return False, None
@@ -180,6 +180,8 @@ if __name__ == "__main__":
 
     mcmc_params = params['mcmc_params']
 
+    save_prefix = f"HMC_{mcmc_params['num_samples']}_{mcmc_params['num_warmup']}_{int(hmc_params['trajectory_length']/hmc_params['step_size'])}"
+
     sample_iter = None
     if "sample_max_iter" in params.keys():
         if parser.verbose:
@@ -187,12 +189,7 @@ if __name__ == "__main__":
         mcmc_params['num_samples'] = params['sample_max_iter']
 
     ## Creating save prefix
-    save_prefix = f"HMC_{mcmc_params['num_samples']}_{mcmc_params['num_warmup']}_{int(hmc_params['trajectory_length']/hmc_params['step_size'])}"
-
     mcmc = MCMC(hmc, **mcmc_params)
-
-
-
     
     train(parser, mcmc, save_dir, save_prefix)
 
