@@ -87,6 +87,8 @@ def train(parser, mcmc, save_dir, save_prefix):
     is_sample, save_file_path = find_post_warm_state(save_dir, save_prefix)
     if is_sample:
         state = load_numpyro_mcmc(save_file_path, parser.verbose)
+        if parser.verbose:
+            print(f"Simulating {mcmc.num_samples} samples from previous state {int(save_prefix.split('_')[1]) - state.i} remaining")
         mcmc.post_warmup_state = state
         rng = mcmc.post_warmup_state.rng_key
     else:
@@ -178,11 +180,20 @@ if __name__ == "__main__":
 
     mcmc_params = params['mcmc_params']
 
-    mcmc = MCMC(hmc, **mcmc_params)
+    sample_iter = None
+    if "sample_max_iter" in params.keys():
+        if parser.verbose:
+            print(f"Found max iteration in parameter file running {params['sample_max_iter']} samples")
+        mcmc_params['num_samples'] = params['sample_max_iter']
 
     ## Creating save prefix
     save_prefix = f"HMC_{mcmc_params['num_samples']}_{mcmc_params['num_warmup']}_{int(hmc_params['trajectory_length']/hmc_params['step_size'])}"
 
+    mcmc = MCMC(hmc, **mcmc_params)
+
+
+
+    
     train(parser, mcmc, save_dir, save_prefix)
 
     

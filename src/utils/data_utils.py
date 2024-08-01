@@ -25,20 +25,19 @@ def generate_log_data(generator, scale, n, shuffle=False, gen_type="All", **kwar
     
     log_scale_1 = np.random.uniform(*scale, n)
     log_scale_2 = np.random.uniform(*scale, n)
-    etas, G_s = generator((10**log_scale_1)**2, (10**log_scale_2)**2)
 
     if exclude_area:
         if "eta_1_range" in kwargs and "eta_2_range" in kwargs:
             eta_1_range = kwargs["eta_1_range"]
             eta_2_range = kwargs["eta_2_range"]
 
-            eta_1_points = (etas[:, 0] < eta_1_range[0]) | (etas[:, 0] > eta_1_range[1])
-            eta_2_points = (etas[:, 1] < eta_2_range[0]) | (etas[:, 1] > eta_2_range[1])
+            eta_1_points = (log_scale_1 < eta_1_range[0]) | (log_scale_1 > eta_1_range[1])
+            eta_2_points = (log_scale_2 < eta_2_range[0]) | (log_scale_2 > eta_2_range[1])
 
-            kept_points = eta_1_points & eta_2_points
+            kept_points = eta_1_points | eta_2_points
 
-            etas = etas[kept_points]
-            G_s = G_s[kept_points]
+            log_scale_1 = log_scale_1[kept_points]
+            log_scale_2 = log_scale_2[kept_points]
 
         else:
             raise ValueError("eta_1_range and eta_2_range must be specified when type is exclude_area")
@@ -48,16 +47,19 @@ def generate_log_data(generator, scale, n, shuffle=False, gen_type="All", **kwar
             eta_1_range = kwargs["eta_1_range"]
             eta_2_range = kwargs["eta_2_range"]
 
-            eta_1_points = (etas[:, 0] > eta_1_range[0]) & (etas[:, 0] < eta_1_range[1])
-            eta_2_points = (etas[:, 1] > eta_2_range[0]) & (etas[:, 1] < eta_2_range[1])
+            eta_1_points = (log_scale_1 > eta_1_range[0]) & (log_scale_1 < eta_1_range[1])
+            eta_2_points = (log_scale_2 > eta_2_range[0]) & (log_scale_2 < eta_2_range[1])
 
             kept_points = eta_1_points | eta_2_points
 
-            etas = etas[kept_points]
-            G_s = G_s[kept_points]
+            log_scale_1 = log_scale_1[kept_points]
+            log_scale_2 = log_scale_2[kept_points]
 
         else:
             raise ValueError("eta_1_range and eta_2_range must be specified when type is include_area")
+
+
+    etas, G_s = generator((10**log_scale_1)**2, (10**log_scale_2)**2)
 
     if add_noise:
         if "noise" in kwargs:
@@ -71,6 +73,7 @@ def generate_log_data(generator, scale, n, shuffle=False, gen_type="All", **kwar
     if drop_eta_2:
         etas[:, 1] = 0
     
+
 
     if shuffle:
         total = np.concatenate((etas, G_s), axis=1)
