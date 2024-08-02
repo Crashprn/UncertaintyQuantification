@@ -10,6 +10,9 @@ from numpyro.infer.initialization import init_to_value
 import jax
 import jax.numpy as jnp
 from jax import random
+from jax import config
+
+config.update("jax_enable_x64", True)
 
 import sys
 import pickle
@@ -43,7 +46,7 @@ def load_initialization_params(file_path):
     init_dict = pickle.load(open(file_path, "rb"))
 
     for key, value in init_dict.items():
-        init_dict[key] = jnp.array(value.T)
+        init_dict[key] = jnp.array(value.T.astype(jnp.float64))
 
     return init_dict
 
@@ -81,8 +84,8 @@ def train(parser, mcmc, save_dir, save_prefix):
 
     if parser.verbose:
         print(f"Using devices: {jax.devices()}")
-    x = jnp.array(x_scaler.transform(etas_train), dtype=jnp.float32)
-    y = jnp.array(y_scaler.transform(gs_train), dtype=jnp.float32)
+    x = jnp.array(x_scaler.transform(etas_train), dtype=jnp.float64)
+    y = jnp.array(y_scaler.transform(gs_train), dtype=jnp.float64)
 
     is_sample, save_file_path = find_post_warm_state(save_dir, save_prefix)
     if is_sample:

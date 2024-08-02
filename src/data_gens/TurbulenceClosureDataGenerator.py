@@ -18,6 +18,7 @@ class TurbulenceClosureDataGenerator:
     def __init__(self, model:str='LRR', type='numpy') -> None:
         self.LRR_C = np.array([3, 0, 0.8, 1.75, 1.31])
         self.SSG_C = np.array([3.4, 1.8, 0.36, 1.25, 0.4])
+        self.model = model
         self.generator = None
         self.mode = type
 
@@ -157,6 +158,16 @@ class TurbulenceClosureDataGenerator:
 
         return torch.stack((G_1, G_2, G_3), dim=1)
     
+
+    def get_discriminant(self, eta1: np.ndarray, eta2: np.ndarray) -> np.ndarray:
+        q = (self.L_1_0**2 + eta1*self.L_1_1*self.L_2 - (2/3)*eta1*(self.L_3**2) + 2*eta2*(self.L_4**2))/((eta1*self.L_1_1)**2)
+        p = -(2*self.L_1_0)/(eta1*self.L_1_1)
+        r = -(self.L_1_0*self.L_2)/((eta1*self.L_1_1)**2)
+
+        a = q - (p**2)/3
+        b = (1/27)*(2*p**3 - 9*p*q + 27*r)
+        discriminant = (b**2)/4 + (a**3)/27
+        return discriminant
 
 
     

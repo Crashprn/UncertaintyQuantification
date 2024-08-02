@@ -15,6 +15,9 @@ from numpyro.util import fori_collect
 import jax
 import jax.numpy as jnp
 from jax import random
+from jax import config
+
+config.update("jax_enable_x64", True)
 
 sys.path.append(os.path.abspath('.'))
 
@@ -43,7 +46,7 @@ def load_initialization_params(file_path):
     init_dict = pickle.load(open(file_path, "rb"))
 
     for key, value in init_dict.items():
-        init_dict[key] = jnp.array(value.T)
+        init_dict[key] = jnp.array(value.T.astype(jnp.float64))
 
     return init_dict
 
@@ -85,8 +88,8 @@ def run_warmup(parser, model, init_strat, hmc_params, mcmc_params, warmup_iters,
 
     if parser.verbose:
         print(f"Using devices: {jax.devices()}")
-    x = jnp.array(x_scaler.transform(etas_train), dtype=jnp.float32)
-    y = jnp.array(y_scaler.transform(gs_train), dtype=jnp.float32)
+    x = jnp.array(x_scaler.transform(etas_train), dtype=jnp.float64)
+    y = jnp.array(y_scaler.transform(gs_train), dtype=jnp.float64)
 
     init_rng_key, sample_rng_key = random.split(random.PRNGKey(0))
     inverse_mass_matrix = None

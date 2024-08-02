@@ -8,6 +8,7 @@ def generate_log_data(generator, scale, n, shuffle=False, gen_type="All", **kwar
     drop_eta_1 = False
     drop_eta_2 = False
     add_noise = False
+    discriminant_condition = False
 
     match gen_type:
         case "exclude_area":
@@ -20,6 +21,8 @@ def generate_log_data(generator, scale, n, shuffle=False, gen_type="All", **kwar
             drop_eta_2 = True
         case "add_noise":
             add_noise = True
+        case "d_condition":
+            discriminant_condition = True
         case _:
             pass
     
@@ -57,6 +60,27 @@ def generate_log_data(generator, scale, n, shuffle=False, gen_type="All", **kwar
 
         else:
             raise ValueError("eta_1_range and eta_2_range must be specified when type is include_area")
+    
+    if discriminant_condition:
+        if "d_condition" in kwargs:
+            cond = kwargs["d_condition"]
+            discriminant = generator.get_discriminant((10**log_scale_1)**2, (10**log_scale_2)**2)
+
+            if cond == ">=":
+                kept_points = discriminant >= 0
+            elif cond == ">":
+                kept_points = discriminant > 0
+            elif cond == "<=":
+                kept_points = discriminant <= 0
+            elif cond == "<":
+                kept_points = discriminant < 0
+            else:
+                raise ValueError("d_condition must be one of >=, >, <=, <")
+
+            log_scale_1 = log_scale_1[kept_points]
+            log_scale_2 = log_scale_2[kept_points]
+        else:
+            raise ValueError("d_condition must be specified when type is d_condition")
 
 
     etas, G_s = generator((10**log_scale_1)**2, (10**log_scale_2)**2)
