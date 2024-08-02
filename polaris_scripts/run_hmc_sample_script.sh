@@ -5,8 +5,8 @@
 #PBS -l select=1:ncpus=32:ngpus=4:system=polaris
 #PBS -l filesystems=home:grand
 #PBS -q debug
-#PBS -o out.txt
-#PBS -e err.txt
+#PBS -o out_sample.txt
+#PBS -e err_sample.txt
 
 
 module use /soft/modulefiles
