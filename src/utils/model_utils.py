@@ -55,3 +55,19 @@ def load_pyro_model(model, path, device, chkpt_name="pyro"):
     pyro.module('module', model, update_module_params=True)
     pyro.module('guide', guide, update_module_params=True)
     return model, guide
+
+def convert_torch_to_numpy(path):
+    tensors = torch.load(path) 
+    param_dict = {k: v.detach().cpu().numpy() for k, v in tensors.items()}
+    new_dict = {}
+    i = 1
+    for k, v in param_dict.items():
+        desc = k.split(".")
+        if 'weight' in desc[-1]:
+            new_dict["w"+str(i)] = v
+        else:
+            new_dict["b"+str(i)] = v
+            i += 1
+
+
+    pickle.dump(new_dict, open(path.replace(".pt", ".pkl"), "wb"))
