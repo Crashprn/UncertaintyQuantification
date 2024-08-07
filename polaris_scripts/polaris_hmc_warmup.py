@@ -107,8 +107,8 @@ def run_warmup(parser, model, init_strat, hmc_params, mcmc_params, warmup_iters,
         hmc_state = init_kernel(
             init_params=last_state.z,
             num_warmup=mcmc_params['num_warmup'],
-            rng_key=hmc_state.rng_key,
-            inverse_mass_matrix=hmc_state.adapt_state.inverse_mass_matrix,
+            rng_key=last_state.rng_key,
+            inverse_mass_matrix=last_state.adapt_state.inverse_mass_matrix,
             **hmc_params,
         )
         hmc_state.i = last_state.i
