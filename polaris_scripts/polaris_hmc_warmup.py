@@ -111,7 +111,7 @@ def run_warmup(parser, model, init_strat, hmc_params, mcmc_params, warmup_iters,
             inverse_mass_matrix=last_state.adapt_state.inverse_mass_matrix,
             **hmc_params,
         )
-        hmc_state.i = last_state.i
+        hmc_state._replace(i=last_state.i)
     else:
         hmc_state = init_kernel(
             init_params=init_params, 
