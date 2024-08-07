@@ -102,15 +102,16 @@ def run_warmup(parser, model, init_strat, hmc_params, mcmc_params, warmup_iters,
     if os.path.exists(os.path.join(save_dir, f"{save_prefix}_warm_state.pkl")):
         if parser.verbose:
             print(f"Found Warmup State {save_prefix}_warm_state.pkl at {save_dir}")
-        hmc_state = pickle.load(open(os.path.join(save_dir, f"{save_prefix}_warm_state.pkl"), "rb"))
+        last_state = pickle.load(open(os.path.join(save_dir, f"{save_prefix}_warm_state.pkl"), "rb"))
         ## Reinitializing kernel because of global variables
-        _ = init_kernel(
-            init_params=hmc_state.z,
+        hmc_state = init_kernel(
+            init_params=last_state.z,
             num_warmup=mcmc_params['num_warmup'],
             rng_key=hmc_state.rng_key,
             inverse_mass_matrix=hmc_state.adapt_state.inverse_mass_matrix,
             **hmc_params,
         )
+        hmc_state.i = last_state.i
     else:
         hmc_state = init_kernel(
             init_params=init_params, 
