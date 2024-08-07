@@ -62,15 +62,15 @@ def find_post_warm_state(save_dir, file_prefix):
     if sample_state_found:
         if parser.verbose:
             print(f"Found previous sample state {os.path.join(save_dir, file_prefix + '_last_state.pkl')}")
-        return sample_state_found, os.path.join(save_dir, file_prefix + "_last_state.pkl")
+        return sample_state_found, os.path.join(save_dir, file_prefix + "_last_state.pkl"), 'sample'
     
     warmup_state_found = os.path.exists(os.path.join(save_dir, file_prefix + "_warm_state.pkl"))
     if warmup_state_found:
         if parser.verbose:
             print(f"Found warmup state in {save_dir}")
-        return warmup_state_found, os.path.join(save_dir, file_prefix + "_warm_state.pkl")
+        return warmup_state_found, os.path.join(save_dir, file_prefix + "_warm_state.pkl"), 'warm'
 
-    return False, None
+    return False, None, 'new'
     
 def train(parser, mcmc, save_dir, save_prefix):
     if parser.verbose:
@@ -87,16 +87,28 @@ def train(parser, mcmc, save_dir, save_prefix):
     x = jnp.array(x_scaler.transform(etas_train), dtype=jnp.float64)
     y = jnp.array(y_scaler.transform(gs_train), dtype=jnp.float64)
 
-    is_sample, save_file_path = find_post_warm_state(save_dir, save_prefix)
-    if is_sample:
-        state = load_numpyro_mcmc(save_file_path, parser.verbose)
+    is_sample, save_file_path, type = find_post_warm_state(save_dir, save_prefix)
+
+    if type == 'sample':
         if parser.verbose:
             print(f"Simulating {mcmc.num_samples} samples from previous state {int(save_prefix.split('_')[1]) - state.i} remaining")
+
+        state = load_numpyro_mcmc(save_file_path, parser.verbose)
+        hmc = HMC(**hmc_params, inverse_mass_matrix=state.adapt_state.inverse_mass_matrix,)
+        mcmc = MCMC(hmc, **mcmc_params)
         mcmc.post_warmup_state = state
         rng = mcmc.post_warmup_state.rng_key
+    elif type == 'warm':
+        state = load_numpyro_mcmc(save_file_path, parser.verbose)
+        hmc = HMC(**hmc_params, inverse_mass_matrix=state.adapt_state.inverse_mass_matrix, init_strategy=init_to_value(values=state.z))
+        mcmc_params['num_warmup'] = 0
+        mcmc = MCMC(hmc, **mcmc_params)
+        rng = random.PRNGKey(0)
     else:
         rng = random.PRNGKey(0)
-    
+        hmc = HMC(**hmc_params)
+        mcmc = MCMC(hmc, **mcmc_params)
+
     if parser.verbose:
         print("---> Beginning Training")
 
@@ -177,7 +189,6 @@ if __name__ == "__main__":
         net_init_params = pickle.load(open(initialize_file_path, "rb"))
         hmc_params['init_strategy'] = init_to_value(values=load_initialization_params(initialize_file_path))
 
-    hmc = HMC(**hmc_params)
 
     ## Creating MCMC object
 
@@ -192,9 +203,8 @@ if __name__ == "__main__":
         mcmc_params['num_samples'] = params['sample_max_iter']
 
     ## Creating save prefix
-    mcmc = MCMC(hmc, **mcmc_params)
     
-    train(parser, mcmc, save_dir, save_prefix)
+    train(parser, hmc_params, mcmc_params, save_dir, save_prefix)
 
     
 
