@@ -72,7 +72,7 @@ def find_post_warm_state(save_dir, file_prefix):
 
     return False, None, 'new'
     
-def train(parser, mcmc, save_dir, save_prefix):
+def train(parser, hmc_params, mcmc_params, save_dir, save_prefix):
     if parser.verbose:
         print(f"Creating {parser.n_data} datapoints")
     etas_train, gs_train = get_data(parser.n_data)
