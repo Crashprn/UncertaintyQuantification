@@ -100,7 +100,8 @@ def train(parser, hmc_params, mcmc_params, save_dir, save_prefix):
         rng = mcmc.post_warmup_state.rng_key
     elif type == 'warm':
         state = load_numpyro_mcmc(save_file_path, parser.verbose)
-        hmc = HMC(**hmc_params, inverse_mass_matrix=state.adapt_state.inverse_mass_matrix, init_strategy=init_to_value(values=state.z))
+        hmc_params['init_strategy'] = init_to_value(values=state.z)
+        hmc = HMC(**hmc_params, inverse_mass_matrix=state.adapt_state.inverse_mass_matrix)
         mcmc_params['num_warmup'] = 0
         mcmc = MCMC(hmc, **mcmc_params)
         rng = random.PRNGKey(0)
