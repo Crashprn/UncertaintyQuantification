@@ -12,7 +12,7 @@ n_restarts=0
 grid_dim=700
 verbose=1
 dim_y=0
-run_name="D_GT_0
+run_name="D_GT_0"
 
 
 # Set up batch script:
