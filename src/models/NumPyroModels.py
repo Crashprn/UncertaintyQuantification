@@ -23,7 +23,7 @@ class NumPyroModel:
             string_rep += f"Layer {i+1}: {dims[0]} -> {dims[1]}\n"
         return string_rep
     
-    def __call__(self, X, Y):
+    def __call__(self, X, Y=None):
         for i, dims in enumerate(self._layer_tuples):
             w = numpyro.sample(
                 f"w{i+1}",
