@@ -93,7 +93,10 @@ def train(parser, hmc_params, mcmc_params, save_dir, save_prefix):
         state = load_numpyro_mcmc(save_file_path, parser.verbose)
         if parser.verbose:
             print(f"Simulating {mcmc_params['num_samples']} samples from previous state {int(save_prefix.split('_')[1]) - state.i} remaining")
+
         hmc_params['init_strategy'] = init_to_value(values=state.z)
+        mcmc_params['num_warmup'] = 0
+
         hmc = HMC(**hmc_params, inverse_mass_matrix=state.adapt_state.inverse_mass_matrix)
         mcmc = MCMC(hmc, **mcmc_params)
         rng = state.rng_key
