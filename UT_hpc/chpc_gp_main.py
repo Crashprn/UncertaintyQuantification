@@ -28,11 +28,12 @@ def parse_args():
     )
 
     parser.add_argument('--save_dir', '-d', type=str, default='data')
-    parser.add_argument('--n_data', type=int, default=80_000)
+    parser.add_argument('--n_data', type=int, default=2_000)
     parser.add_argument('--n_restarts', type=int, default=2)
     parser.add_argument('--grid_dim', type=int, default=700)
     parser.add_argument('--verbose', '-v', type=int, default=1)
     parser.add_argument('--dim_y', type=int, default=0)
+    parser.add_argument('--run_name', type=str, default='GP')
 
     return parser.parse_args()
 
@@ -95,8 +96,8 @@ def train_test(parser):
     if parser.verbose:
         print("---> Saving Predictions to ", save_dir)
 
-    np.save(os.path.join(save_dir, f"Mean{parser.dim_y}.npy"), pred_mean)
-    np.save(os.path.join(save_dir, f"Std{parser.dim_y}.npy"), pred_std)
+    np.save(os.path.join(save_dir, f"{parser.run_name}_Mean{parser.dim_y}.npy"), pred_mean)
+    np.save(os.path.join(save_dir, f"{parser.run_name}_Std{parser.dim_y}.npy"), pred_std)
 
     if parser.verbose:
         print("---> Predictions Saved")
