@@ -91,7 +91,7 @@ def train(parser, hmc_params, mcmc_params, save_dir, save_prefix):
 
     if type == 'sample':
         if parser.verbose:
-            print(f"Simulating {mcmc.num_samples} samples from previous state {int(save_prefix.split('_')[1]) - state.i} remaining")
+            print(f"Simulating {mcmc_params['num_samples']} samples from previous state {int(save_prefix.split('_')[1]) - state.i} remaining")
 
         state = load_numpyro_mcmc(save_file_path, parser.verbose)
         hmc = HMC(**hmc_params, inverse_mass_matrix=state.adapt_state.inverse_mass_matrix,)
