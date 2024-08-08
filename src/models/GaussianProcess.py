@@ -41,7 +41,7 @@ class SinusoidalKernel(nn.Module):
         return amplitude ** 2 * torch.exp(-2 * torch.sin(torch.pi *torch.linalg.norm(x1 - x2, dim=2)*period)**2 / length_scale)
 
 class GaussianProcessRegressor:
-    def __init__(self, kernel, noise=0.0, max_iter=1000, n_restarts=0, lr=1e-3, batch_size=32, tol=1e-2, device=None):
+    def __init__(self, kernel, noise=0.0, max_iter=1000, n_restarts=0, lr=1e-3, batch_size=32, tol=1e-2, device=None, verbose=True):
         self.kernel = kernel
         self.noise = noise
         self.max_iter = max_iter
@@ -51,6 +51,7 @@ class GaussianProcessRegressor:
         self.device = device if device is not None else torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.delta = 1e-3
         self.batch_size = batch_size
+        self.verbose = verbose
     
     def fit(self, X, y):
         self.L = None
@@ -75,7 +76,7 @@ class GaussianProcessRegressor:
                     loss.backward()
                     optimizer.step()
                     self.losses.append(loss.item())
-                if i % 100 == 0:
+                if i % 100 == 0 and self.verbose:
                     print(f'Iteration {i}, Loss: {loss.item()}')
         
         # Compute final Cholesky decomposition of the kernel matrix

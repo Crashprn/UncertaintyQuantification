@@ -1,19 +1,24 @@
 from sklearn.preprocessing import StandardScaler
-from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import RBF
+
+import torch
 
 import argparse
 
 import os
+import sys
 
-from src.models.TurbulenceNetwork import TurbulenceNetworkBayesian
+sys.path.append(os.path.abspath('.'))
+
 from src.data_gens.TurbulenceClosureDataGenerator import TurbulenceClosureDataGenerator
+from src.models.GaussianProcess import GaussianProcessRegressor, RBFKernel
 
 from src.utils.model_utils import *
 from src.utils.data_utils import *
 
 
 DATA_BOUNDS_LOG = (-.5, 2)
+#DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+DEVICE = torch.device('cpu')
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -23,8 +28,8 @@ def parse_args():
     )
 
     parser.add_argument('--save_dir', '-d', type=str, default='data')
-    parser.add_argument('--n_data', type=int, default=5_000)
-    parser.add_argument('--n_restarts', type=int, default=10)
+    parser.add_argument('--n_data', type=int, default=80_000)
+    parser.add_argument('--n_restarts', type=int, default=2)
     parser.add_argument('--grid_dim', type=int, default=700)
     parser.add_argument('--verbose', '-v', type=int, default=1)
     parser.add_argument('--dim_y', type=int, default=0)
@@ -46,8 +51,12 @@ def train_test(parser):
     x_train = x_scaler.transform(etas_train).astype(np.float32)
     y_train = y_scaler.transform(gs_train).astype(np.float32)
 
-    kernel = 1.0*RBF(length_scale=1.0)
-    gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=parser.n_restarts, copy_X_train=False)
+    x_train = torch.tensor(x_train, device=DEVICE)
+    y_train = torch.tensor(y_train, device=DEVICE)
+
+
+    kernel = RBFKernel(device=DEVICE).to(DEVICE)
+    gp = GaussianProcessRegressor(kernel=kernel, n_restarts=parser.n_restarts, batch_size=1024, device=DEVICE, verbose=parser.verbose)
 
     if parser.verbose:
         print("---> Fitting Gaussian Process")
@@ -68,9 +77,10 @@ def train_test(parser):
     num_splits = 100
 
     for x_split in np.array_split(etas_test, num_splits):
+        x_split = torch.tensor(x_split, device=DEVICE, dtype=torch.float32)
         mean, std = gp.predict(x_split, return_std=True)
-        pred_mean.append(y_scaler.inverse_transform(mean.reshape(-1, 1)))
-        pred_std.append(std * y_scaler.scale_)
+        pred_mean.append(y_scaler.inverse_transform(mean.reshape(-1, 1).detach().cpu().numpy()))
+        pred_std.append(std.detach().cpu().numpy() * y_scaler.scale_)
     
     pred_mean = np.concatenate(pred_mean)
     pred_std = np.concatenate(pred_std)
@@ -123,7 +133,7 @@ def get_data(n_points):
     eta_1_range = (10**np.array([-.3, 0.0]))**2
     eta_2_range = (10**np.array([-.3, 0.0]))**2
 
-    etas_train, gs_train = generate_log_data(SSG_gen, DATA_BOUNDS_LOG, n_points, shuffle=True, gen_type="All")
+    etas_train, gs_train = generate_log_data(SSG_gen, DATA_BOUNDS_LOG, n_points, shuffle=True, gen_type="d_condition", d_condition='>=')
 
     return etas_train, gs_train
 
