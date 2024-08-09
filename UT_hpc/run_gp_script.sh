@@ -29,7 +29,7 @@ module load miniconda3/latest
 conda activate base
 cd $current_dir
 sleep 5
-python3 -u chpc_gp_main.py --save_dir $save_dir --n_data $n_data --n_restarts $n_restarts --grid_dim $grid_dim --verbose $verbose --dim_y $dim_y --run_name $run_name
+python3 -u UT_hpc/chpc_gp_main.py --save_dir $save_dir --n_data $n_data --n_restarts $n_restarts --grid_dim $grid_dim --verbose $verbose --dim_y $dim_y --run_name $run_name
 sleep 5
 exit 0
 EOF
