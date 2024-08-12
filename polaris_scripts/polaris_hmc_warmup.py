@@ -3,6 +3,8 @@ import pickle
 import os
 import sys
 
+from signal import signal, SIGINT
+
 import numpy as np
 import numpyro
 from numpyro import distributions as dist
@@ -112,6 +114,7 @@ def run_warmup(parser, model, init_strat, hmc_params, mcmc_params, warmup_iters,
             **hmc_params,
         )
         hmc_state._replace(i=last_state.i)
+        current_iter = last_state.i
     else:
         hmc_state = init_kernel(
             init_params=init_params, 
@@ -119,41 +122,51 @@ def run_warmup(parser, model, init_strat, hmc_params, mcmc_params, warmup_iters,
             rng_key=sample_rng_key,
             **hmc_params,
         )
+        current_iter = 0
 
-    remaining_iterations = mcmc_params['num_warmup'] - hmc_state.i
+    total_iterations = mcmc_params['num_warmup']
 
-    num_iters = warmup_iters if warmup_iters < remaining_iterations else remaining_iterations
-
-    if num_iters <= 0:
-        print(f"Already completed {mcmc_params['num_warmup']} warmup iterations")
+    if  current_iter >= total_iterations:
+        print(f"Completed {total_iterations} warmup iterations")
         return
 
     diagnostics = (
             lambda x: get_diagnostics_str(x)
     )
 
-    hmc_states = fori_collect(
-        num_iters - 1,
-        num_iters,
-        sample_kernel,
-        hmc_state,
-        diagnostics_fn=diagnostics,
-        transform=lambda hmc_state: model_info.postprocess_fn(hmc_state.z),
-        return_last_val=True
-    )
+    ### Allowing for restarts of warmup if it is interrupted. Saves state every warmup_iters
+    while current_iter < total_iterations:
+        num_iters = min(warmup_iters, total_iterations - current_iter)
+
+        hmc_states = fori_collect(
+            num_iters - 1,
+            num_iters,
+            sample_kernel,
+            hmc_state,
+            diagnostics_fn=diagnostics,
+            transform=lambda hmc_state: model_info.postprocess_fn(hmc_state.z),
+            return_last_val=True
+        )
+
+        current_iter += num_iters
+
+        if parser.verbose:
+            print(f"Saving Warmup Checkpoint after {current_iter} iterations to {save_dir} as {save_prefix}_warm_state.pkl")
+        pickle.dump(hmc_states[1], open(os.path.join(save_dir, f"{save_prefix}_warm_state.pkl"), "wb"))
 
     if parser.verbose:
-        print(f"Saving Warmup State to {save_dir} as {save_prefix}_warm_state.pkl")
-    pickle.dump(hmc_states[1], open(os.path.join(save_dir, f"{save_prefix}_warm_state.pkl"), "wb"))
+        if current_iter >= total_iterations:
+            print(f"Completed {total_iterations} warmup iterations")
 
-    if parser.verbose:
-        if  remaining_iterations < warmup_iters:
-            print(f"Finished Warmup after {num_iters} iterations")
-        else:
-            print(f"Finished {warmup_iters} warmup iterations, {remaining_iterations-warmup_iters} remaining")
+def interupt_handler(signum, frame):
+    print("Exiting...")
+    exit(1)
 
 
 if __name__ == '__main__':
+    ## Registering interupt handler for SIGINT
+    signal(SIGINT, interupt_handler)
+
     parser = parse_args()
     
     cwd = os.getcwd()
