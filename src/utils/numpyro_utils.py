@@ -11,9 +11,10 @@ def load_numpyro_mcmc(save_path, verbose=True):
     mcmc_last_state = pickle.load(open(save_path, "rb"))
     return mcmc_last_state
 
-def save_numpyro_mcmc(mcmc, save_dir, file_prefix):
+def save_numpyro_mcmc(mcmc, current_iter, save_dir, file_prefix):
     samples = mcmc.get_samples(group_by_chain=mcmc.num_chains > 1)
     last_state = mcmc.last_state
+    last_state = last_state._replace(i=current_iter)
 
     save_path = os.path.join(save_dir, file_prefix)
     samples_path = save_path + "_samples.pkl"

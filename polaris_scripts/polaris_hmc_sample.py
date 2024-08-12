@@ -17,6 +17,7 @@ config.update("jax_enable_x64", True)
 import sys
 import pickle
 import os
+from signal import signal, SIGINT
 
 sys.path.append(os.path.abspath('.'))
 
@@ -72,7 +73,7 @@ def find_post_warm_state(save_dir, file_prefix):
 
     return False, None, 'new'
     
-def train(parser, hmc_params, mcmc_params, save_dir, save_prefix):
+def train(parser, hmc_params, mcmc_params, total_iterations, save_dir, save_prefix):
     if parser.verbose:
         print(f"Creating {parser.n_data} datapoints")
     etas_train, gs_train = get_data(parser.n_data)
@@ -91,15 +92,13 @@ def train(parser, hmc_params, mcmc_params, save_dir, save_prefix):
 
     if type == 'sample':
         state = load_numpyro_mcmc(save_file_path, parser.verbose)
-        if parser.verbose:
-            print(f"Simulating {mcmc_params['num_samples']} samples from previous state {int(save_prefix.split('_')[1]) - state.i} remaining")
-
         hmc_params['init_strategy'] = init_to_value(values=state.z)
         mcmc_params['num_warmup'] = 0
 
         hmc = HMC(**hmc_params, inverse_mass_matrix=state.adapt_state.inverse_mass_matrix)
         mcmc = MCMC(hmc, **mcmc_params)
         rng = state.rng_key
+        current_iter = state.i
     elif type == 'warm':
         state = load_numpyro_mcmc(save_file_path, parser.verbose)
         hmc_params['init_strategy'] = init_to_value(values=state.z)
@@ -107,23 +106,35 @@ def train(parser, hmc_params, mcmc_params, save_dir, save_prefix):
         mcmc_params['num_warmup'] = 0
         mcmc = MCMC(hmc, **mcmc_params)
         rng = random.PRNGKey(0)
+        current_iter = 0
     else:
         rng = random.PRNGKey(0)
         hmc = HMC(**hmc_params)
         mcmc = MCMC(hmc, **mcmc_params)
+        current_iter = 0
 
     if parser.verbose:
-        print("---> Beginning Training")
+        print(f"---> Beginning Training at iteration {current_iter} of {total_iterations}")
 
-    mcmc.run(rng, x, y)
+
+    while current_iter <= total_iterations:
+        mcmc.run(rng, x, y)
+        
+        current_iter += mcmc_params['num_samples']
+
+        if parser.verbose:
+            print(f"---> Completed {current_iter} iterations of {total_iterations}")
+            print(f"---> Saving MCMC object to {save_dir} as {save_prefix}")
+
+        save_numpyro_mcmc(mcmc, current_iter, save_dir, save_prefix)
+
+        ## Setting up for next iteration
+        mcmc.post_warmup_state = mcmc.last_state
+
+
 
     if parser.verbose:
         print("---> Training Complete")
-        print(f"---> Saving MCMC object to {save_dir} as {save_prefix}")
-
-    save_numpyro_mcmc(mcmc, save_dir, save_prefix)
-
-    if parser.verbose:
         print("---> Successfully Saved MCMC Object")
 
     
@@ -149,8 +160,13 @@ def get_data(n_points):
 
     return etas_train, gs_train
 
+def interrupt_handler(signal_received, frame):
+    print("Interrupt received, exiting")
+    exit(0)
+
 
 if __name__ == "__main__":
+    signal(SIGINT, interrupt_handler)
     parser = parse_args()
 
     cwd = os.getcwd()
@@ -196,7 +212,9 @@ if __name__ == "__main__":
     ## Creating MCMC object
 
     mcmc_params = params['mcmc_params']
+    total_iters = mcmc_params['num_samples']
 
+    ## Creating save prefix
     save_prefix = f"HMC_{mcmc_params['num_samples']}_{mcmc_params['num_warmup']}_{int(hmc_params['trajectory_length']/hmc_params['step_size'])}"
 
     sample_iter = None
@@ -205,9 +223,8 @@ if __name__ == "__main__":
             print(f"Found max iteration in parameter file running {params['sample_max_iter']} samples")
         mcmc_params['num_samples'] = params['sample_max_iter']
 
-    ## Creating save prefix
     
-    train(parser, hmc_params, mcmc_params, save_dir, save_prefix)
+    train(parser, hmc_params, mcmc_params, total_iters, save_dir, save_prefix)
 
     
 
