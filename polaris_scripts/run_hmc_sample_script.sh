@@ -1,12 +1,13 @@
 #!/bin/bash
 
 #PBS -A BuoyDrivenFlows
-#PBS -l walltime=01:00:00
+#PBS -l walltime=70:00:00
 #PBS -l select=1:ncpus=32:ngpus=4:system=polaris
 #PBS -l filesystems=home:grand
-#PBS -q debug
+#PBS -q preemptable
 #PBS -o out_sample.txt
 #PBS -e err_sample.txt
+#PBS -r y
 
 
 module use /soft/modulefiles
