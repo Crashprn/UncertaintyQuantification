@@ -57,7 +57,15 @@ def train_test(parser):
 
 
     kernel = RBFKernel(device=DEVICE).to(DEVICE)
-    gp = GaussianProcessRegressor(kernel=kernel, n_restarts=parser.n_restarts, batch_size=1024, device=DEVICE, verbose=parser.verbose, max_iter=5000)
+    gp = GaussianProcessRegressor(
+        kernel=kernel,
+        n_restarts=parser.n_restarts,
+        batch_size=1524,
+        device=DEVICE,
+        verbose=parser.verbose,
+        max_iter=5000,
+        lr=0.0001
+    )
 
     if parser.verbose:
         print("---> Fitting Gaussian Process")
