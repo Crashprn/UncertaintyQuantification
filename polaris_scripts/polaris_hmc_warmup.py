@@ -151,7 +151,7 @@ def run_warmup(parser, model, init_strat, hmc_params, mcmc_params, warmup_iters,
         current_iter += num_iters
 
         if parser.verbose:
-            print(f"Saving Warmup Checkpoint after {current_iter} iterations to {save_dir} as {save_prefix}_warm_state.pkl")
+            print(f"Saving Warmup Checkpoint after {current_iter} of {total_iterations} iterations to {save_dir} as {save_prefix}_warm_state.pkl")
         pickle.dump(hmc_states[1], open(os.path.join(save_dir, f"{save_prefix}_warm_state.pkl"), "wb"))
 
     if parser.verbose:
