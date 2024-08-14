@@ -11,7 +11,9 @@ class RBFKernel(nn.Module):
         self.length_scale = nn.Parameter(torch.tensor(length_scale))
         self.lower_bound = torch.tensor([1e-6], device=self.device)
         self.upper_bound = torch.tensor([1e6], device=self.device)
-    
+
+    def get_params(self):
+        return {'amplitude': self.amplitude.cpu().detach().item(), 'length_scale': self.length_scale.cpu().detach().item()} 
 
     def forward(self, x1, x2):
         x1 = x1.unsqueeze(1)

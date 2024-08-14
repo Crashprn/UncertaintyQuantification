@@ -6,6 +6,7 @@ import argparse
 
 import os
 import sys
+import pickle
 
 sys.path.append(os.path.abspath('.'))
 
@@ -29,7 +30,7 @@ def parse_args():
 
     parser.add_argument('--save_dir', '-d', type=str, default='data')
     parser.add_argument('--n_data', type=int, default=2_000)
-    parser.add_argument('--n_restarts', type=int, default=2)
+    parser.add_argument('--n_restarts', type=int, default=0)
     parser.add_argument('--grid_dim', type=int, default=700)
     parser.add_argument('--verbose', '-v', type=int, default=1)
     parser.add_argument('--dim_y', type=int, default=0)
@@ -60,11 +61,11 @@ def train_test(parser):
     gp = GaussianProcessRegressor(
         kernel=kernel,
         n_restarts=parser.n_restarts,
-        batch_size=1524,
+        batch_size=2000,
         device=DEVICE,
         verbose=parser.verbose,
-        max_iter=5000,
-        lr=0.0001
+        max_iter=1000,
+        lr=0.001
     )
 
     if parser.verbose:
@@ -76,6 +77,18 @@ def train_test(parser):
         print("---> Fit Complete")
         print("---> Generating Predictions")
 
+    save_dir = os.path.join(parser.save_dir, "GP")
+    os.makedirs(save_dir, exist_ok=True)
+
+
+    param_dict = gp.kernel.get_params()
+
+    if parser.verbose:
+        print("---> Saving Kernel Hyperparameters")
+        print(f"Kernel Hyperparameters: {param_dict}")
+    
+    pickle.dump(param_dict, open(os.path.join(save_dir, f"{parser.run_name}_{parser.dim_y}_KernelParams.pkl"), "wb"))
+    
     etas_test, gs_test = get_test_data(parser)
 
     etas_test = x_scaler.transform(etas_test)
@@ -96,12 +109,6 @@ def train_test(parser):
 
     if parser.verbose:
         print("---> Predictions Complete")
-        print("---> Saving Predictions")
-    
-    save_dir = os.path.join(parser.save_dir, "GP")
-    os.makedirs(save_dir, exist_ok=True)
-
-    if parser.verbose:
         print("---> Saving Predictions to ", save_dir)
 
     np.save(os.path.join(save_dir, f"{parser.run_name}_Mean{parser.dim_y}.npy"), pred_mean)
