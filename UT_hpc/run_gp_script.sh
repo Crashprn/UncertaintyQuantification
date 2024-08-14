@@ -11,7 +11,7 @@ n_data=80000
 n_restarts=2
 grid_dim=700
 verbose=1
-dim_y=0
+dim_y=$1
 run_name="D_GT_0"
 
 
