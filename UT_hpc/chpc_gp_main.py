@@ -64,7 +64,7 @@ def train_test(parser):
         batch_size=2000,
         device=DEVICE,
         verbose=parser.verbose,
-        max_iter=1000,
+        max_iter=3000,
         lr=0.001
     )
 
