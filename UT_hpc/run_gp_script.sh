@@ -21,8 +21,8 @@ cat > $1.batch << EOF
 #SBATCH --time=4-00:00:00
 #SBATCH --nodes=$NN
 #SBATCH --mem=500000
-#SBATCH -o out.$NN
-#SBATCH -e err.$NN
+#SBATCH -o out.$dim_y
+#SBATCH -e err.$dim_y
 #SBATCH --account=usumae-np
 #SBATCH --partition=usumae-np
 module load miniconda3/latest
