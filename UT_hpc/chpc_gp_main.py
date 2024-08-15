@@ -57,11 +57,11 @@ def train_test(parser):
     y_train = torch.tensor(y_train, device=DEVICE)
 
 
-    kernel = RBFKernel(device=DEVICE).to(DEVICE)
+    kernel = RBFKernel(amplitude=1.0, length_scale=1.0, device=DEVICE).to(DEVICE)
     gp = GaussianProcessRegressor(
         kernel=kernel,
         n_restarts=parser.n_restarts,
-        batch_size=2000,
+        batch_size=4000,
         device=DEVICE,
         verbose=parser.verbose,
         max_iter=3000,
@@ -79,7 +79,6 @@ def train_test(parser):
 
     save_dir = os.path.join(parser.save_dir, "GP")
     os.makedirs(save_dir, exist_ok=True)
-
 
     param_dict = gp.kernel.get_params()
 
