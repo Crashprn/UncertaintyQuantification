@@ -28,7 +28,7 @@ def parse_args():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
 
-    parser.add_argument('--save_dir', '-d', type=str, default='data')
+    parser.add_argument('--save_dir', '-d', type=str, default='data/GP')
     parser.add_argument('--n_data', type=int, default=2_000)
     parser.add_argument('--n_restarts', type=int, default=0)
     parser.add_argument('--grid_dim', type=int, default=700)
@@ -77,7 +77,7 @@ def train_test(parser):
         print("---> Fit Complete")
         print("---> Generating Predictions")
 
-    save_dir = os.path.join(parser.save_dir, "GP")
+    save_dir = parser.save_dir
     os.makedirs(save_dir, exist_ok=True)
 
     param_dict = gp.kernel.get_params()
