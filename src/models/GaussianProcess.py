@@ -84,18 +84,21 @@ class GaussianProcessRegressor:
         # Compute final Cholesky decomposition of the kernel matrix
         K = self.kernel(X, X) + (self.noise + self.delta) * torch.eye(X.shape[0], device=self.device)
         self.L = torch.linalg.cholesky(K)
+        self.K_inv = torch.cholesky_inverse(self.L)
 
         return self
 
             
     
     def neg_log_likelihood(self, L, y):
-        mvnormal = MultivariateNormal(torch.zeros(y.shape[0], device=self.device), scale_tril=L)
-        return -mvnormal.log_prob(y.squeeze()).sum()
+        mvnormal = MultivariateNormal(torch.zeros(y.shape[0], device=self.device, dtype=y.dtype), scale_tril=L)
+
+        return -mvnormal.log_prob(y.squeeze())
+
     
     def predict(self, X, num_samples=None, return_std=False):
         K_test = self.kernel(X, self.X_train)
-        K_inv = torch.cholesky_inverse(self.L)
+        K_inv = self.K_inv
         mean = K_test @ K_inv @ self.y_train
 
         if return_std or num_samples is not None:
