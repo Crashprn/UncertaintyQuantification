@@ -105,12 +105,17 @@ def run_warmup(parser, model, init_strat, hmc_params, mcmc_params, warmup_iters,
         if parser.verbose:
             print(f"Found Warmup State {save_prefix}_warm_state.pkl at {save_dir}")
         last_state = pickle.load(open(os.path.join(save_dir, f"{save_prefix}_warm_state.pkl"), "rb"))
+
+        mass_matrix = last_state.adapt_state.inverse_mass_matrix
+        if not isinstance(mass_matrix, jnp.ndarray):
+            mass_matrix = list(mass_matrix.values())[0]
+
         ## Reinitializing kernel because of global variables
         hmc_state = init_kernel(
             init_params=last_state.z,
             num_warmup=mcmc_params['num_warmup'],
             rng_key=last_state.rng_key,
-            inverse_mass_matrix=last_state.adapt_state.inverse_mass_matrix,
+            inverse_mass_matrix=mass_matrix,
             **hmc_params,
         )
         hmc_state._replace(i=last_state.i)
