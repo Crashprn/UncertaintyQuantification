@@ -33,6 +33,7 @@ def parse_args():
     parser.add_argument('--n_restarts', type=int, default=0)
     parser.add_argument('--grid_dim', type=int, default=700)
     parser.add_argument('--verbose', '-v', type=int, default=1)
+    parser.add_argument('--batch_size', type=int, default=4000)
     parser.add_argument('--dim_y', type=int, default=0)
     parser.add_argument('--run_name', type=str, default='GP')
 
@@ -61,7 +62,7 @@ def train_test(parser):
     gp = GaussianProcessRegressor(
         kernel=kernel,
         n_restarts=parser.n_restarts,
-        batch_size=4000,
+        batch_size=parser.batch_size,
         device=DEVICE,
         verbose=parser.verbose,
         max_iter=3000,
