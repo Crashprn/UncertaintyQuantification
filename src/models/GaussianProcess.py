@@ -23,6 +23,25 @@ class RBFKernel(nn.Module):
 
         return amplitude ** 2 * torch.exp(-0.5 * (torch.linalg.norm(x1-x2, dim=2)) / length_scale ** 2)
 
+
+class RBFKernelIndependent(nn.Module):
+    def __init__(self, length_scale=[1.0, 1.0], amplitude=1.0, device=None):
+        super(RBFKernelIndependent, self).__init__()
+        self.device = device if device is not None else torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.amplitude = nn.Parameter(torch.tensor(amplitude))
+        self.length_scale = nn.Parameter(torch.tensor(length_scale))
+        self.lower_bound = torch.tensor([1e-6], device=self.device)
+        self.upper_bound = torch.tensor([1e6], device=self.device)
+    
+    def get_params(self):
+        return {'amplitude': self.amplitude.cpu().detach().item(), 'length_scale': self.length_scale.cpu().detach().tolist()}
+
+    def forward(self, x1, x2):
+        amplitude = self.amplitude.clamp(self.lower_bound, self.upper_bound)
+        length_scale = self.length_scale.clamp(self.lower_bound, self.upper_bound)
+
+        return amplitude ** 2 * torch.exp(-0.5 * (x1 - x2) @ torch.diag(1 / length_scale ** 2) @ (x1 - x2).T)
+
 class SinusoidalKernel(nn.Module):
     def __init__(self, amplitude=1.0, length_scale=1.0, period=1.0, device=None):
         super(SinusoidalKernel, self).__init__()
@@ -43,7 +62,7 @@ class SinusoidalKernel(nn.Module):
         return amplitude ** 2 * torch.exp(-2 * torch.sin(torch.pi *torch.linalg.norm(x1 - x2, dim=2)*period)**2 / length_scale)
 
 class GaussianProcessRegressor:
-    def __init__(self, kernel, noise=0.0, max_iter=1000, n_restarts=0, lr=1e-3, batch_size=32, tol=1e-2, device=None, verbose=True):
+    def __init__(self, kernel, noise=0.0, max_iter=1000, n_restarts=0, lr=1e-3, batch_size=32, tol=1e-2, device=None, delta=1e-10, verbose=True):
         self.kernel = kernel
         self.noise = noise
         self.max_iter = max_iter
@@ -51,7 +70,7 @@ class GaussianProcessRegressor:
         self.lr = lr
         self.tol = tol
         self.device = device if device is not None else torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.delta = 1e-3
+        self.delta = delta
         self.batch_size = batch_size
         self.verbose = verbose
     
@@ -78,31 +97,27 @@ class GaussianProcessRegressor:
                     loss.backward()
                     optimizer.step()
                     self.losses.append(loss.item())
-                if i % 100 == 0 and self.verbose:
-                    print(f'Iteration {i}, Loss: {loss.item()}')
+                if i % 50 == 0 and self.verbose:
+                    print(f'Iteration {i:6d}, Loss: {loss.item():10.2f}')
         
-        # Compute final Cholesky decomposition of the kernel matrix
+        # Compute final Cholesky decomposition of the kernel matrix and save the inverse
         K = self.kernel(X, X) + (self.noise + self.delta) * torch.eye(X.shape[0], device=self.device)
         self.L = torch.linalg.cholesky(K)
         self.K_inv = torch.cholesky_inverse(self.L)
 
         return self
-
-            
     
     def neg_log_likelihood(self, L, y):
         mvnormal = MultivariateNormal(torch.zeros(y.shape[0], device=self.device, dtype=y.dtype), scale_tril=L)
 
-        return -mvnormal.log_prob(y.squeeze())
-
+        return -mvnormal.log_prob(y.squeeze()).sum()
     
     def predict(self, X, num_samples=None, return_std=False):
         K_test = self.kernel(X, self.X_train)
-        K_inv = self.K_inv
-        mean = K_test @ K_inv @ self.y_train
+        mean = K_test @ self.K_inv @ self.y_train
 
         if return_std or num_samples is not None:
-            cov = self.kernel(X, X) - K_test @ K_inv @ K_test.T
+            cov = self.kernel(X, X) - K_test @ self.K_inv @ K_test.T
             cov = cov + self.delta * torch.eye(X.shape[0], device=self.device)
 
         if num_samples is None:
