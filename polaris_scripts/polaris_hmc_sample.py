@@ -1,6 +1,7 @@
 import argparse
 
 import numpy as np
+from sklearn.preprocessing import StandardScaler
 import numpyro
 from numpyro import distributions as dist
 from numpyro.infer import MCMC, HMC
@@ -81,7 +82,7 @@ def train(parser, hmc_params, mcmc_params, total_iterations, save_dir, save_pref
     if parser.verbose:
         print("Scaling Data")
     x_scaler = CustomScalerX().fit(etas_train)
-    y_scaler = CustomScalerY().fit(gs_train)
+    y_scaler = StandardScaler().fit(gs_train)
 
     if parser.verbose:
         print(f"Using devices: {jax.devices()}")

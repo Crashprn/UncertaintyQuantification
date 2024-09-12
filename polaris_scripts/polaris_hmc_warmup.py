@@ -6,6 +6,9 @@ import sys
 from signal import signal, SIGINT
 
 import numpy as np
+
+from sklearn.preprocessing import StandardScaler
+
 import numpyro
 from numpyro import distributions as dist
 from numpyro.infer.hmc import hmc
@@ -86,7 +89,7 @@ def run_warmup(parser, model, init_strat, hmc_params, mcmc_params, warmup_iters,
     if parser.verbose:
         print("Scaling Data")
     x_scaler = CustomScalerX().fit(etas_train)
-    y_scaler = CustomScalerY().fit(gs_train)
+    y_scaler = StandardScaler().fit(gs_train)
 
     if parser.verbose:
         print(f"Using devices: {jax.devices()}")
