@@ -6,14 +6,14 @@ current_dir=$(pwd)
 procs_per_node=64
 NN=1
 NP=$(($NN * $procs_per_node))
-save_dir="data/D_LT_0/GP"
-n_data=40000
+save_dir="data/D_GT_0/GP4"
+n_data=80000
 n_restarts=0
 grid_dim=700
-batch_size=14000
+batch_size=26000
 verbose=1
 dim_y=$1
-run_name="D_LT_0"
+run_name="D_GT_0"
 
 
 # Set up batch script:
