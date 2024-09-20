@@ -34,6 +34,7 @@ def parse_args():
     parser.add_argument('--grid_dim', type=int, default=700)
     parser.add_argument('--verbose', '-v', type=int, default=1)
     parser.add_argument('--batch_size', type=int, default=1000)
+    parser.add_argument('--max_iter', type=int, default=1000)
     parser.add_argument('--dim_y', type=int, default=0)
     parser.add_argument('--run_name', type=str, default='GP')
 
@@ -64,7 +65,7 @@ def train_test(parser):
         batch_size=parser.batch_size,
         device=DEVICE,
         verbose=parser.verbose,
-        max_iter=1000,
+        max_iter=parser.max_iter,
         lr=1e-3,
         delta=1e-6
     )
