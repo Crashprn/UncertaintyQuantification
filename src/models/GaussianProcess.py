@@ -21,7 +21,12 @@ class RBFKernel(nn.Module):
         amplitude = self.amplitude.clamp(self.lower_bound, self.upper_bound)
         length_scale = self.length_scale.clamp(self.lower_bound, self.upper_bound)
 
-        return amplitude ** 2 * torch.exp(-0.5 * (torch.linalg.norm(x1-x2, dim=2)) / length_scale ** 2)
+        dists = (x1 - x2).pow(2).sum(2)
+
+        return amplitude ** 2 * torch.exp(-0.5 * dists / length_scale)
+
+
+        #return amplitude ** 2 * torch.exp(-0.5 * (torch.linalg.norm(x1-x2, dim=2)) / length_scale)
 
 
 class RBFKernelIndependent(nn.Module):
@@ -62,11 +67,10 @@ class SinusoidalKernel(nn.Module):
         return amplitude ** 2 * torch.exp(-2 * torch.sin(torch.pi *torch.linalg.norm(x1 - x2, dim=2)*period)**2 / length_scale)
 
 class GaussianProcessRegressor:
-    def __init__(self, kernel, noise=0.0, max_iter=1000, n_restarts=0, lr=1e-3, batch_size=32, tol=1e-2, device=None, delta=1e-10, verbose=True):
+    def __init__(self, kernel, noise=0.0, max_iter=1000, lr=1e-3, batch_size=32, tol=1e-2, device=None, delta=1e-10, verbose=True):
         self.kernel = kernel
         self.noise = noise
         self.max_iter = max_iter
-        self.n_restarts = n_restarts
         self.lr = lr
         self.tol = tol
         self.device = device if device is not None else torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -82,23 +86,22 @@ class GaussianProcessRegressor:
         dataloader = DataLoader(TensorDataset(X, y), batch_size=self.batch_size, shuffle=True)
 
 
-        for i in range(self.n_restarts + 1):
-            optimizer = torch.optim.Adam(self.kernel.parameters(), lr=self.lr)
+        optimizer = torch.optim.Adam(self.kernel.parameters(), lr=self.lr)
 
-            for i in range(self.max_iter):
-                for X_batch, y_batch in dataloader:
-                    optimizer.zero_grad()
-                    K = self.kernel(X_batch, X_batch) + (self.noise + self.delta) * torch.eye(X_batch.shape[0], device=self.device)
-                    self.L = torch.linalg.cholesky(K)
+        for i in range(self.max_iter):
+            for X_batch, y_batch in dataloader:
+                optimizer.zero_grad()
+                K = self.kernel(X_batch, X_batch) + (self.noise + self.delta) * torch.eye(X_batch.shape[0], device=self.device)
+                self.L = torch.linalg.cholesky(K)
 
-                    loss = self.neg_log_likelihood(self.L, y_batch)
-                    if i > 0 and abs(self.losses[-1] - loss.item()) < self.tol:
-                        break
-                    loss.backward()
-                    optimizer.step()
-                    self.losses.append(loss.item())
-                if i % 50 == 0 and self.verbose:
-                    print(f'Iteration {i:6d}, Loss: {loss.item():10.2f}')
+                loss = self.neg_log_likelihood(self.L, y_batch)
+                if i > 0 and abs(self.losses[-1] - loss.item()) < self.tol:
+                    break
+                loss.backward()
+                optimizer.step()
+                self.losses.append(loss.item())
+            if i % 50 == 0 and self.verbose:
+                print(f'Iteration {i:6d}, Loss: {loss.item():10.2f}')
         
         # Compute final Cholesky decomposition of the kernel matrix and save the inverse
         K = self.kernel(X, X) + (self.noise + self.delta) * torch.eye(X.shape[0], device=self.device)
@@ -113,21 +116,22 @@ class GaussianProcessRegressor:
         return -mvnormal.log_prob(y.squeeze()).sum()
     
     def predict(self, X, num_samples=None, return_std=False):
-        K_test = self.kernel(X, self.X_train)
-        mean = K_test @ self.K_inv @ self.y_train
+        with torch.no_grad():
+            K_test = self.kernel(X, self.X_train)
+            mean = K_test @ self.K_inv @ self.y_train
 
-        if return_std or num_samples is not None:
-            cov = self.kernel(X, X) - K_test @ self.K_inv @ K_test.T
-            cov = cov + self.delta * torch.eye(X.shape[0], device=self.device)
+            if return_std or num_samples is not None:
+                cov = self.kernel(X, X) - K_test @ self.K_inv @ K_test.T
+                cov = cov + self.delta * torch.eye(X.shape[0], device=self.device)
 
-        if num_samples is None:
-            if return_std:
-                return mean, cov.diag().sqrt()
+            if num_samples is None:
+                if return_std:
+                    return mean, cov.diag().sqrt()
+                else:
+                    return mean
             else:
-                return mean
-        else:
-            mv_normal = MultivariateNormal(mean.squeeze(), covariance_matrix=cov)
-            if return_std:
-                return mv_normal.sample((num_samples,)), cov.diag().sqrt()
-            else:
-                return mv_normal.sample((num_samples,))
+                mv_normal = MultivariateNormal(mean.squeeze(), covariance_matrix=cov)
+                if return_std:
+                    return mv_normal.sample((num_samples,)), cov.diag().sqrt()
+                else:
+                    return mv_normal.sample((num_samples,))
