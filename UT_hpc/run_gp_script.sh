@@ -8,7 +8,6 @@ NN=1
 NP=$(($NN * $procs_per_node))
 save_dir="data/D_GT_0/GP4"
 n_data=80000
-n_restarts=0
 grid_dim=700
 batch_size=26000
 verbose=1
@@ -30,7 +29,7 @@ module load miniconda3/latest
 conda activate base
 cd $current_dir
 sleep 5
-python3 -u UT_hpc/chpc_gp_main.py --save_dir $save_dir --n_data $n_data --n_restarts $n_restarts --grid_dim $grid_dim --verbose $verbose --dim_y $dim_y --run_name $run_name --batch_size $batch_size
+python3 -u UT_hpc/chpc_gp_main.py --save_dir $save_dir --n_data $n_data --grid_dim $grid_dim --verbose $verbose --dim_y $dim_y --run_name $run_name --batch_size $batch_size
 sleep 5
 exit 0
 EOF

@@ -31,7 +31,6 @@ def parse_args():
 
     parser.add_argument('--save_dir', '-d', type=str, default='data/GP')
     parser.add_argument('--n_data', type=int, default=1_000)
-    parser.add_argument('--n_restarts', type=int, default=0)
     parser.add_argument('--grid_dim', type=int, default=700)
     parser.add_argument('--verbose', '-v', type=int, default=1)
     parser.add_argument('--batch_size', type=int, default=1000)
@@ -59,10 +58,9 @@ def train_test(parser):
     y_train = torch.tensor(y_train, device=DEVICE, dtype=DTYPE)
 
 
-    kernel = RBFKernel(amplitude=1.0, length_scale=1.0, device=DEVICE).to(DEVICE)
+    kernel = RBFKernel(amplitude=6.0, length_scale=0.001, device=DEVICE).to(DEVICE)
     gp = GaussianProcessRegressor(
         kernel=kernel,
-        n_restarts=parser.n_restarts,
         batch_size=parser.batch_size,
         device=DEVICE,
         verbose=parser.verbose,
