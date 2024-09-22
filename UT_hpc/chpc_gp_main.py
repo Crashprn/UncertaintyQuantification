@@ -59,7 +59,7 @@ def train_test(parser):
     y_train = torch.tensor(y_train, device=DEVICE, dtype=DTYPE)
 
 
-    kernel = RBFKernel(amplitude=6.0, length_scale=1.001, device=DEVICE).to(DEVICE)
+    kernel = RBFKernel(amplitude=6.0, length_scale=6.0, device=DEVICE).to(DEVICE)
     gp = GaussianProcessRegressor(
         kernel=kernel,
         batch_size=parser.batch_size,

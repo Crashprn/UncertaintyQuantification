@@ -21,12 +21,11 @@ class RBFKernel(nn.Module):
         amplitude = self.amplitude.clamp(self.lower_bound, self.upper_bound)
         length_scale = self.length_scale.clamp(self.lower_bound, self.upper_bound)
 
-        dists = (x1 - x2).pow(2).sum(2)
+        #dists = (x1 - x2).pow(2).sum(2)
 
-        return amplitude ** 2 * torch.exp(-0.5 * dists / length_scale)
+        #return amplitude ** 2 * torch.exp(-0.5 * dists / length_scale)
 
-
-        #return amplitude ** 2 * torch.exp(-0.5 * (torch.linalg.norm(x1-x2, dim=2)) / length_scale)
+        return amplitude ** 2 * torch.exp(-0.5 * (torch.linalg.norm(x1-x2, dim=2)) / length_scale)
 
 
 class RBFKernelIndependent(nn.Module):
