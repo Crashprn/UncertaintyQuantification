@@ -81,10 +81,14 @@ def get_diagnostics_str(state):
         int(state.trajectory_length/state.adapt_state.step_size), state.adapt_state.step_size, state.mean_accept_prob
     )
 
-def run_warmup(parser, model, init_strat, hmc_params, mcmc_params, warmup_iters, save_dir, save_prefix):
+def run_warmup(parser, init_strat, net_params, hmc_params, mcmc_params, warmup_iters, save_dir, save_prefix):
     if parser.verbose:
         print(f"Creating {parser.n_data} datapoints")
     etas_train, gs_train = get_data(parser.n_data)
+
+    ## Creating Network
+    net_params['data_size'] = etas_train.shape[0]
+    model = NumPyroModel(**net_params)
 
     if parser.verbose:
         print("Scaling Data")
@@ -97,7 +101,6 @@ def run_warmup(parser, model, init_strat, hmc_params, mcmc_params, warmup_iters,
     y = jnp.array(y_scaler.transform(gs_train), dtype=jnp.float64)
 
     init_rng_key, sample_rng_key = random.split(random.PRNGKey(0))
-    inverse_mass_matrix = None
     model_info = initialize_model(init_rng_key, model, init_strategy=init_strat, model_args=(x, y))
     init_params = model_info.param_info
 
@@ -199,10 +202,6 @@ if __name__ == '__main__':
             print(f"Loading parameters from {param_file_path}")    
         params = get_params_from_json(os.path.join(save_dir, parser.param_file))
 
-    ## Creating Network
-    net_params = params['net_params']
-    net_params['data_size'] = parser.n_data
-    net = NumPyroModel(**net_params)
 
     ## Creating HMC object
     hmc_params = params['hmc_params']
@@ -219,11 +218,12 @@ if __name__ == '__main__':
         init_strat = init_to_value(values=load_initialization_params(initialize_file_path))
 
     mcmc_params = params['mcmc_params']
+    net_params = params['net_params']
 
     ## Creating save prefix
     save_prefix = f"HMC_{mcmc_params['num_samples']}_{mcmc_params['num_warmup']}_{int(hmc_params['trajectory_length']/hmc_params['step_size'])}"
 
-    run_warmup(parser, net, init_strat, hmc_params, mcmc_params, params['warmup_iter_block'], save_dir, save_prefix)
+    run_warmup(parser, init_strat, net_params, hmc_params, mcmc_params, params['warmup_iter_block'], save_dir, save_prefix)
 
 
 

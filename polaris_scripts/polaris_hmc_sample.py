@@ -74,10 +74,16 @@ def find_post_warm_state(save_dir, file_prefix):
 
     return False, None, 'new'
     
-def train(parser, hmc_params, mcmc_params, total_iterations, save_dir, save_prefix):
+def train(parser, net_params, hmc_params, mcmc_params, total_iterations, save_dir, save_prefix):
     if parser.verbose:
         print(f"Creating {parser.n_data} datapoints")
     etas_train, gs_train = get_data(parser.n_data)
+
+    ## Creating Network
+    net_params['data_size'] = etas_train.shape[0]
+    model = NumPyroModel(**net_params)
+    hmc_params['model'] = model
+
 
     if parser.verbose:
         print("Scaling Data")
@@ -191,13 +197,9 @@ if __name__ == "__main__":
         params = get_params_from_json(os.path.join(save_dir, parser.param_file))
 
     ## Creating Network
-    net_params = params['net_params']
-    net_params['data_size'] = parser.n_data
-    net = NumPyroModel(**net_params)
 
     ## Creating HMC object
     hmc_params = params['hmc_params']
-    hmc_params['model'] = net
 
     initialize_file_path = os.path.join(save_dir, parser.init_file) 
     if not os.path.exists(initialize_file_path):
@@ -210,8 +212,8 @@ if __name__ == "__main__":
         hmc_params['init_strategy'] = init_to_value(values=load_initialization_params(initialize_file_path))
 
 
-    ## Creating MCMC object
-
+    ## Getting Net and MCMC parameters
+    net_params = params['net_params']
     mcmc_params = params['mcmc_params']
     total_iters = mcmc_params['num_samples']
 
@@ -225,7 +227,7 @@ if __name__ == "__main__":
         mcmc_params['num_samples'] = params['sample_max_iter']
 
     
-    train(parser, hmc_params, mcmc_params, total_iters, save_dir, save_prefix)
+    train(parser, net_params, hmc_params, mcmc_params, total_iters, save_dir, save_prefix)
 
     
 
