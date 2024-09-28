@@ -55,7 +55,7 @@ class TurbulenceNetworkBayesian(PyroModule):
             device,
             data_size: int,
             layer_prior=(0,1), 
-            output_prior=(0,5),
+            output_prior_conc_rate=(3.0, 1.0),
             activation=nn.ReLU
         ) -> None:
         super().__init__()
@@ -63,7 +63,7 @@ class TurbulenceNetworkBayesian(PyroModule):
         self.output_dim = torch.tensor(output_dim, device=device)
         self.h_nodes = torch.tensor(h_nodes, device=device)
         self.device = device
-        self.output_prior = output_prior
+        self.output_prior_conc_rate = output_prior_conc_rate
         self.data_size = data_size
         self.activation = activation
 
@@ -96,8 +96,6 @@ class TurbulenceNetworkBayesian(PyroModule):
                     if activation is not None:
                         self.layers.append(activation())
         
-        self.sigma = torch.diag(self.output_prior)
-        
 
     def forward(self, x: torch.Tensor, y=None) -> torch.Tensor:
 
@@ -106,10 +104,10 @@ class TurbulenceNetworkBayesian(PyroModule):
 
         mu = x
 
-        #sigma = pyro.sample('sigma', dist.Uniform(self.output_prior[0], self.output_prior[1]).expand([self.output_dim]).to_event(1))
-        #sigma = torch.diag(sigma)
+        sigma = pyro.sample('sigma', dist.Gamma(self.output_prior_conc_rate[0], self.output_prior_conc_rate[1]).expand([self.output_dim]).to_event(1))
+        sigma = torch.diag(sigma)
 
 
         with pyro.plate("data", size=self.data_size, subsample_size=x.shape[0]):
-            obs = pyro.sample("obs", dist.MultivariateNormal(mu, covariance_matrix=self.sigma), obs=y)
+            obs = pyro.sample("obs", dist.MultivariateNormal(mu, covariance_matrix=sigma), obs=y)
         return mu

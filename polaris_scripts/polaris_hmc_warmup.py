@@ -43,7 +43,7 @@ def parse_args():
     parser.add_argument('--n_data', type=int, default=80_000)
     parser.add_argument('--verbose', '-v', type=int, default=1)
     parser.add_argument('--param_file', type=str, default='run_params.json')
-    parser.add_argument('--init_file', type=str, default='HMC_Initialize_large.pkl')
+    parser.add_argument('--init_file', type=str, default='HMC_Initialize_large1.pkl')
 
     return parser.parse_args()
 
