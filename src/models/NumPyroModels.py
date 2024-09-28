@@ -40,7 +40,7 @@ class NumPyroModel:
                 X = jnp.dot(X, w) + b
         
         sigma = numpyro.sample("sigma", dist.Gamma(self.out_prior_conc, self.out_prior_rate).expand([self.output_dim]).to_event(1))
-        sigma = jnp.diag(sigma)
+        sigma = jnp.diag(1.0/sigma)
 
         with numpyro.plate("data", self.data_size):
             numpyro.sample("Y", dist.MultivariateNormal(X, covariance_matrix=sigma), obs=Y)

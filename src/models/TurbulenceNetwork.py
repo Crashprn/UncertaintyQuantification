@@ -105,7 +105,7 @@ class TurbulenceNetworkBayesian(PyroModule):
         mu = x
 
         sigma = pyro.sample('sigma', dist.Gamma(self.output_prior_conc_rate[0], self.output_prior_conc_rate[1]).expand([self.output_dim]).to_event(1))
-        sigma = torch.diag(sigma)
+        sigma = torch.diag(1.0/sigma)
 
 
         with pyro.plate("data", size=self.data_size, subsample_size=x.shape[0]):
