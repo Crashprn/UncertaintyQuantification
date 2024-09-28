@@ -72,7 +72,7 @@ def get_data(n_points):
     eta_1_range = (10**np.array([-.3, 0.0]))**2
     eta_2_range = (10**np.array([-.3, 0.0]))**2
 
-    etas_train, gs_train = generate_log_data(SSG_gen, log, n_points, shuffle=True, gen_type="All")
+    etas_train, gs_train = generate_log_data(SSG_gen, log, n_points, shuffle=True, gen_type="d_condition", d_condition=">=")
 
     return etas_train, gs_train
 

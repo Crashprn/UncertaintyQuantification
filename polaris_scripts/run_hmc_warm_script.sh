@@ -9,8 +9,8 @@
 #PBS -e err.txt
 #PBS -r y
 
-ndata=15000
-chkpt_dir="Model_Checkpoints/HMC_S"
+ndata=40000
+chkpt_dir="Model_Checkpoints/HMC_D_GT_0"
 
 module use /soft/modulefiles
 module load conda
