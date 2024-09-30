@@ -116,6 +116,7 @@ def train_test(parser):
 
     np.save(os.path.join(save_dir, f"{parser.run_name}_Mean{parser.dim_y}.npy"), pred_mean)
     np.save(os.path.join(save_dir, f"{parser.run_name}_Std{parser.dim_y}.npy"), pred_std)
+    np.save(os.path.join(save_dir, f"{parser.run_name}_History_{parser.dim_y}.npy"), np.array(gp.losses))
 
     if parser.verbose:
         print("---> Predictions Saved")
