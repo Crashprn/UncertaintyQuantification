@@ -4,8 +4,7 @@ import numpy as np
 from sklearn.preprocessing import StandardScaler
 import numpyro
 from numpyro import distributions as dist
-from numpyro.infer import MCMC, HMC
-from numpyro.infer.hmc import hmc
+from numpyro.infer import MCMC, HMC, NUTS
 from numpyro.infer.initialization import init_to_value
 
 import jax
@@ -41,6 +40,7 @@ def parse_args():
     parser.add_argument('--verbose', '-v', type=int, default=1)
     parser.add_argument('--param_file', type=str, default='run_params.json')
     parser.add_argument('--init_file', type=str, default='HMC_Initialize_large.pkl')
+    parser.add_argument('--hmc_type', type=str, default='HMC')
 
     return parser.parse_args()
 
@@ -84,6 +84,11 @@ def train(parser, net_params, hmc_params, mcmc_params, total_iterations, save_di
     model = NumPyroModel(**net_params)
     hmc_params['model'] = model
 
+    if parser.hmc_type == 'NUTS':
+        kernel = NUTS
+    else:
+        kernel = HMC
+
 
     if parser.verbose:
         print("Scaling Data")
@@ -102,21 +107,21 @@ def train(parser, net_params, hmc_params, mcmc_params, total_iterations, save_di
         hmc_params['init_strategy'] = init_to_value(values=state.z)
         mcmc_params['num_warmup'] = 0
 
-        hmc = HMC(**hmc_params, inverse_mass_matrix=state.adapt_state.inverse_mass_matrix)
+        hmc = kernel(**hmc_params, inverse_mass_matrix=state.adapt_state.inverse_mass_matrix)
         mcmc = MCMC(hmc, **mcmc_params)
         rng = state.rng_key
         current_iter = state.i
     elif type == 'warm':
         state = load_numpyro_mcmc(save_file_path, parser.verbose)
         hmc_params['init_strategy'] = init_to_value(values=state.z)
-        hmc = HMC(**hmc_params, inverse_mass_matrix=state.adapt_state.inverse_mass_matrix)
+        hmc = kernel(**hmc_params, inverse_mass_matrix=state.adapt_state.inverse_mass_matrix)
         mcmc_params['num_warmup'] = 0
         mcmc = MCMC(hmc, **mcmc_params)
         rng = random.PRNGKey(0)
         current_iter = 0
     else:
         rng = random.PRNGKey(0)
-        hmc = HMC(**hmc_params)
+        hmc = kernel(**hmc_params)
         mcmc = MCMC(hmc, **mcmc_params)
         current_iter = 0
 
