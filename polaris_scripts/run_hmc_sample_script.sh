@@ -9,8 +9,9 @@
 #PBS -e err_sample.txt
 #PBS -r y
 
-ndata=15000
-chkpt_dir="Model_Checkpoints/HMC_S"
+ndata=40000
+chkpt_dir="Model_Checkpoints/NUTS"
+hmc_algo="NUTS"
 
 module use /soft/modulefiles
 module load conda
@@ -18,6 +19,6 @@ conda activate base
 cd ${PBS_O_WORKDIR}
 source ./venvs/2024-04-29/bin/activate
 sleep 1
-python3 -u polaris_scripts/polaris_hmc_sample.py --n_data $ndata --chkpt_dir $chkpt_dir
+python3 -u polaris_scripts/polaris_hmc_sample.py --n_data $ndata --chkpt_dir $chkpt_dir --hmc_type $hmc_algo
 sleep 1
 exit 0

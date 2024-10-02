@@ -5,12 +5,12 @@
 #PBS -l select=1:ncpus=32:ngpus=4:system=polaris
 #PBS -l filesystems=home:grand
 #PBS -q preemptable
-#PBS -o out.txt
-#PBS -e err.txt
+#PBS -o out1.txt
+#PBS -e err1.txt
 #PBS -r y
 
 ndata=40000
-chkpt_dir="Model_Checkpoints/HMC_D_GT_0"
+chkpt_dir="Model_Checkpoints/NUTS"
 
 module use /soft/modulefiles
 module load conda

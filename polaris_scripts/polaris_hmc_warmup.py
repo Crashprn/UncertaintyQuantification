@@ -104,7 +104,7 @@ def run_warmup(parser, init_strat, net_params, hmc_params, mcmc_params, warmup_i
     model_info = initialize_model(init_rng_key, model, init_strategy=init_strat, model_args=(x, y))
     init_params = model_info.param_info
 
-    init_kernel, sample_kernel = hmc(model_info.potential_fn, algo="HMC")
+    init_kernel, sample_kernel = hmc(model_info.potential_fn, algo="NUTS")
 
     ## Loading Previous warmup state if it exists
     if os.path.exists(os.path.join(save_dir, f"{save_prefix}_warm_state.pkl")):
