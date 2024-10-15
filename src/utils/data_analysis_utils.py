@@ -19,8 +19,11 @@ Returns:
 np.ndarray
     The sharpness score of the prediction.
 '''
-def sharpness_score(y_pred_std, axis_mean=None):
-    return np.mean(y_pred_std**2, axis=axis_mean)
+def sharpness_score(y_pred_std, axis_mean=None, combine=True):
+    if combine:
+        return np.mean(y_pred_std**2)
+    else:
+        return np.mean(y_pred_std**2, axis=axis_mean)
 
 
 '''
@@ -40,9 +43,15 @@ Returns:
 np.ndarray
     The coefficient of variation of the prediction.
 '''
-def coefficient_of_variation(y_pred_std, axis_mean=None):
+def coefficient_of_variation(y_pred_std, axis_mean=None, combine=True):
     mean_std = np.mean(y_pred_std, axis=axis_mean)
-    return np.sqrt(np.sum((y_pred_std-mean_std)**2, axis=axis_mean)/(y_pred_std.shape[axis_mean]-1)) / mean_std
+    cv = np.sqrt(np.sum((y_pred_std-mean_std)**2, axis=axis_mean)/(y_pred_std.shape[axis_mean]-1)) / mean_std
+
+    if combine:
+        return np.mean(cv)
+    else:
+        return cv
+
 
 
 '''
@@ -96,7 +105,7 @@ Returns:
 np.ndarray, np.ndarray
     The calibration curve of the prediction in the form (gaussian_cdf, empirical_cdf).
 '''
-def calibration_curve(y_true, y_pred, num_bins=100):
+def calibration_curve1(y_pred, num_bins=100):
     y_pred_mean = y_pred.mean(axis=0)
     y_pred_std = y_pred.std(axis=0)
     p_i_arr = np.linspace(0, 1, num_bins+1)
@@ -108,6 +117,18 @@ def calibration_curve(y_true, y_pred, num_bins=100):
 
         emp_cdf_y_i = np.mean(np.prod((y_pred <= y_i), axis=2), axis=0)
         p_i_hat[i] = np.mean(emp_cdf_y_i)
+    
+    return (p_i_arr, p_i_hat)
+
+def calibration_curve(y_true, y_pred_mean, y_pred_std, num_bins=100):
+    p_i_arr = np.linspace(0, 1, num_bins+1)
+    p_i_hat = np.zeros(p_i_arr.shape[0])
+
+    for i, p_i in enumerate(p_i_arr):
+        y_i = norm.ppf(p_i)
+        y_i = y_i * y_pred_std + y_pred_mean
+
+        p_i_hat[i] = np.mean(np.prod((y_true <= y_i), axis=1), axis=0)
     
     return (p_i_arr, p_i_hat)
 
