@@ -103,6 +103,7 @@ def get_gp_samples(parser):
         print("---> Sampling Complete")
         print("---> Saving Samples ", save_dir)
         print(f"Shape of Samples: {samples.shape}")
+        print(f"Error: {np.mean(np.abs(samples - gs_test[:, parser.dim_y].reshape(1, -1)))}")
 
     np.save(os.path.join(save_dir, f"{parser.run_name}_{parser.dim_y}_Samples.npy"), samples)
 
