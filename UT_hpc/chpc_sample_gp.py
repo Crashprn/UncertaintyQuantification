@@ -95,7 +95,7 @@ def get_gp_samples(parser):
     for x_split in np.array_split(etas_test, num_splits):
         x_split = torch.tensor(x_split, device=DEVICE, dtype=DTYPE)
         samples = gp.predict(x_split, num_samples=parser.num_samples)
-        pred_samples.append(samples.detach().cpu().numpy() * y_scaler.scale_)
+        pred_samples.append(samples.detach().cpu().numpy()*y_scaler.scale_ + y_scaler.mean_)
     
     samples = np.concatenate(pred_samples, axis=1)
     
