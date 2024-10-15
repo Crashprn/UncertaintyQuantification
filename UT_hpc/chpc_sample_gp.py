@@ -29,9 +29,11 @@ def parse_args():
     )
 
     parser.add_argument('--save_dir', '-d', type=str, default='data/GP')
-    parser.add_argument('--n__train_data', type=int, default=1_000)
-    parser.add_argument('--vis_data_dir', type=int, default='data/vis_data')
+    parser.add_argument('--n_data', type=int, default=1_000)
+    parser.add_argument('--vis_data_dir', type=str, default=None)
     parser.add_argument('--verbose', '-v', type=int, default=1)
+    parser.add_argument('--num_samples', type=int, default=50)
+    parser.add_argument('--grid_dim', type=int, default=700)
     parser.add_argument('--dim_y', type=int, default=0)
     parser.add_argument('--run_name', type=str, default='GP')
 
@@ -63,8 +65,6 @@ def get_gp_samples(parser):
     kernel = RBFKernel(amplitude=param_dict['amplitude'], length_scale=param_dict['length_scale'], device=DEVICE).to(DEVICE)
     gp = GaussianProcessRegressor(
         kernel=kernel,
-        n_restarts=parser.n_restarts,
-        batch_size=parser.batch_size,
         device=DEVICE,
         verbose=parser.verbose,
         max_iter=0,
@@ -72,33 +72,39 @@ def get_gp_samples(parser):
         delta=1e-6
     )
 
-    if parser.verbose:
-        print("---> Initializing Gaussian Process")
-
     gp = gp.fit(x_train, y_train)
 
-    if parser.verbose:
-        print("---> Generating Predictions")
-    
     save_dir = parser.save_dir
     os.makedirs(save_dir, exist_ok=True)
 
     if parser.verbose:
-        print("---> Loading Test Data")
+        print("---> Beginning Sampling")
+
+    if parser.vis_data_dir is None:
+        etas_test, gs_test = get_test_data(parser)    
+    else:
+        etas_test = np.load(os.path.join(parser.vis_data_dir, "etas.npy"))
+        gs_test = np.load(os.path.join(parser.vis_data_dir, "gs.npy"))
+
+    etas_test = x_scaler.transform(etas_test)
+
+    pred_samples = []
+
+    num_splits = 100
+
+    for x_split in np.array_split(etas_test, num_splits):
+        x_split = torch.tensor(x_split, device=DEVICE, dtype=DTYPE)
+        samples = gp.predict(x_split, num_samples=parser.num_samples)
+        pred_samples.append(samples.detach().cpu().numpy() * y_scaler.scale_)
     
-    x_test = np.load(os.path.join(parser.vis_data_dir, f"{parser.run_name}_Test_Data.npy"))
-
-
-    x_test = x_scaler.transform(x_test)
-
-    x_test = torch.tensor(x_test, device=DEVICE, dtype=DTYPE)
-    samples = gp.predict(x_test, num_samples=100)
+    samples = np.concatenate(pred_samples, axis=1)
     
     if parser.verbose:
-        print("---> Predictions Complete")
-        print("---> Saving Predictions to ", save_dir)
+        print("---> Sampling Complete")
+        print("---> Saving Samples ", save_dir)
+        print(f"Shape of Samples: {samples.shape}")
 
-    np.save(os.path.join(save_dir, f"{parser.run_name}_Samples.npy"), samples.cpu().detach().numpy())
+    np.save(os.path.join(save_dir, f"{parser.run_name}_{parser.dim_y}_Samples.npy"), samples)
 
     if parser.verbose:
         print("---> Predictions Saved")
@@ -120,6 +126,24 @@ def get_data(n_points):
     etas_train, gs_train = generate_log_data(SSG_gen, DATA_BOUNDS_LOG, n_points, shuffle=True, gen_type="All", d_condition='>=')
 
     return etas_train, gs_train
+
+def get_test_data(parser):
+    dim = parser.grid_dim
+    x_grid, y_grid = np.meshgrid(np.linspace(*DATA_BOUNDS_LOG, dim),np.linspace(*DATA_BOUNDS_LOG, dim))
+    eta1 = (10**x_grid.flatten())**2
+    eta2 = (10**y_grid.flatten())**2
+    
+    if parser.verbose:
+        print("---> Generating Test Data")
+
+    gen = TurbulenceClosureDataGenerator(model="SSG", type='numpy')
+
+    if parser.verbose:
+        print("---> Finished Generating Test Data")
+
+    etas, G_s = gen(eta1, eta2)
+
+    return etas, G_s
 
 
 if __name__ == "__main__":
