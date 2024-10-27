@@ -20,10 +20,11 @@ np.ndarray
     The sharpness score of the prediction.
 '''
 def sharpness_score(y_pred_std, axis_mean=None, combine=True):
+    sha = np.mean(y_pred_std**2, axis=axis_mean)
     if combine:
-        return np.mean(y_pred_std**2)
+        return np.sqrt(np.sum(sha**2))
     else:
-        return np.mean(y_pred_std**2, axis=axis_mean)
+        return sha
 
 
 '''
@@ -48,7 +49,7 @@ def coefficient_of_variation(y_pred_std, axis_mean=None, combine=True):
     cv = np.sqrt(np.sum((y_pred_std-mean_std)**2, axis=axis_mean)/(y_pred_std.shape[axis_mean]-1)) / mean_std
 
     if combine:
-        return np.mean(cv)
+        return np.sqrt(np.sum(cv**2))
     else:
         return cv
 
@@ -108,12 +109,12 @@ np.ndarray, np.ndarray
 def calibration_curve1(y_pred, num_bins=100):
     y_pred_mean = y_pred.mean(axis=0)
     y_pred_std = y_pred.std(axis=0)
-    p_i_arr = np.linspace(0, 1, num_bins+1)
+    p_i_arr = np.linspace(0, 1, num_bins+1, endpoint=True)
     p_i_hat = np.zeros(p_i_arr.shape[0])
+    dim = y_pred.shape[1]
 
     for i, p_i in enumerate(p_i_arr):
-        y_i = norm.ppf(p_i)
-        y_i = y_i * y_pred_std + y_pred_mean
+        y_i = norm.ppf(p_i**(1/dim), y_pred_mean, y_pred_std)
 
         emp_cdf_y_i = np.mean(np.prod((y_pred <= y_i), axis=2), axis=0)
         p_i_hat[i] = np.mean(emp_cdf_y_i)
@@ -123,12 +124,29 @@ def calibration_curve1(y_pred, num_bins=100):
 def calibration_curve(y_true, y_pred_mean, y_pred_std, num_bins=100):
     p_i_arr = np.linspace(0, 1, num_bins+1)
     p_i_hat = np.zeros(p_i_arr.shape[0])
+    dim = y_pred_mean.shape[1]
 
-    for i, p_i in enumerate(p_i_arr):
-        y_i = norm.ppf(p_i)
+    for i, p_i in enumerate(p_i_arr[1:]):
+        y_i = norm.ppf(p_i**(1/dim))
         y_i = y_i * y_pred_std + y_pred_mean
 
         p_i_hat[i] = np.mean(np.prod((y_true <= y_i), axis=1), axis=0)
+    
+    p_i_hat[-1] = 1
+    
+    return (p_i_arr, p_i_hat)
+
+def calibration_curve2(y_true, y_pred_mean, y_pred_std, num_bins=100):
+    p_i_arr = np.linspace(0, 1, num_bins+1)
+    p_i_hat = np.zeros(p_i_arr.shape[0])
+    dim = y_pred_mean.shape[1]
+    y_trans = (y_true - y_pred_mean) / y_pred_std
+
+    for i, p_i in enumerate(p_i_arr[1:]):
+        y_i = norm.ppf(p_i**(1/dim))
+        p_i_hat[i] = np.mean(np.prod((y_trans <= y_i), axis=1), axis=0)
+    
+    p_i_hat[-1] = 1
     
     return (p_i_arr, p_i_hat)
 
