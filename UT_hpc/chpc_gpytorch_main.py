@@ -4,13 +4,11 @@ import numpy as np
 import gpytorch
 import math
 import torch
-from matplotlib import pyplot as plt
 from torch.optim import Adam
 from torch.utils.data import DataLoader, TensorDataset
 
 import os
 import sys
-import pickle
 
 sys.path.append(os.path.abspath('.'))
 
