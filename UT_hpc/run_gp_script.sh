@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-find . -name "*batch*" -delete
+find . -name "*batch" -delete
 current_dir=$(pwd)
 procs_per_node=64
 NN=1
