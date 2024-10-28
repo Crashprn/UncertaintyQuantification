@@ -45,7 +45,7 @@ class standardGP():
         self.train_x = train_inp
         self.train_y = train_out
         self.device = device
-    def train(self, epochs, learning_rate):
+    def train(self, epochs, learning_rate, model_params=None):
         """Train the GP model
 
         Args:
@@ -57,6 +57,8 @@ class standardGP():
         """
         likelihood = gpytorch.likelihoods.GaussianLikelihood(batch_shape=torch.Size([self.num_GPs])).to(self.device)
         model = GPModel(inducing_points=self.initial_inducing_pts, input_dims=self.num_dim, learn_inducing=self.learn_inducing, batch=self.num_GPs).to(self.device)
+        if model_params is not None:
+            model.load_state_dict(model_params)
         model.train()
         likelihood.train()
         optimizer = Adam(model.parameters(), lr=learning_rate)

@@ -36,6 +36,7 @@ def parse_args():
     parser.add_argument('--max_iter', type=int, default=10)
     parser.add_argument('--y_dim', type=int, default=0)
     parser.add_argument('--run_name', type=str, default='GP')
+    parser.add_argument('--resume', type=int, default=0)
 
     return parser.parse_args()
 
@@ -72,7 +73,15 @@ if __name__ == "__main__":
                     num_dim=NUM_DIM, num_GPs=BATCHES, 
                     train_inp=train_x_norm, train_out=train_y_norm,
                     device=device)
-    trained_model = sgp.train(epochs=NUM_EPOCHS,learning_rate=0.01)
+    
+    if parser.resume:
+        if parser.verbose:
+            print("Resuming training")
+        model_params = torch.load(os.path.join(parser.save_dir, f"{parser.run_name}_{parser.y_dim}_Params.pt"))
+    else:
+        model_params = None
+
+    trained_model = sgp.train(epochs=NUM_EPOCHS,learning_rate=0.01, model_params=model_params)
 
     ##### Save the model
     save_dir = parser.save_dir

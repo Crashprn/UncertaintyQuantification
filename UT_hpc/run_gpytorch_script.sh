@@ -14,6 +14,7 @@ n_inducing=6000
 verbose=1
 y_dim=$1
 run_name="GPYTORCH"
+resume=1
 
 
 # Set up batch script:
@@ -30,7 +31,7 @@ module load miniconda3/latest
 conda activate base
 cd $current_dir
 sleep 5
-python3 -u UT_hpc/chpc_gpytorch_main.py --save_dir $save_dir --n_data $n_data --grid_dim $grid_dim --verbose $verbose --y_dim $y_dim --max_iter $max_iter --run_name $run_name --batch_size $batch_size --n_inducing $n_inducing
+python3 -u UT_hpc/chpc_gpytorch_main.py --save_dir $save_dir --n_data $n_data --grid_dim $grid_dim --verbose $verbose --y_dim $y_dim --max_iter $max_iter --run_name $run_name --batch_size $batch_size --n_inducing $n_inducing --resume $resume
 sleep 5
 exit 0
 EOF
