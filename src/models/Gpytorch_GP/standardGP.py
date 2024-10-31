@@ -9,6 +9,7 @@ from src.models.Gpytorch_GP.batchedGPVariants import GPModel
 from torch.optim import Adam
 import math
 from torch.utils.data import DataLoader, TensorDataset
+from gpytorch.constraints import Interval
 
 """NOTATIONS
    D: input dimensions
@@ -55,7 +56,8 @@ class standardGP():
         Returns:
             model: The trained GP model as a gpytorch object    
         """
-        likelihood = gpytorch.likelihoods.GaussianLikelihood(batch_shape=torch.Size([self.num_GPs])).to(self.device)
+        noise_constraint = Interval(5e-4, 0.2)
+        likelihood = gpytorch.likelihoods.GaussianLikelihood(batch_shape=torch.Size([self.num_GPs]), noise_constraint=noise_constraint).to(self.device)
         model = GPModel(inducing_points=self.initial_inducing_pts, input_dims=self.num_dim, learn_inducing=self.learn_inducing, batch=self.num_GPs).to(self.device)
         if model_params is not None:
             model.load_state_dict(model_params)

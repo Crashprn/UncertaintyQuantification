@@ -6,6 +6,7 @@ from gpytorch.variational import CholeskyVariationalDistribution
 from gpytorch.variational import VariationalStrategy
 import torch.nn.functional as F
 from gpytorch.models.deep_gps.dspp import DSPPLayer, DSPP
+from gpytorch.constraints import Interval
 
 """NOTATIONS
    D: input dimensions
@@ -26,12 +27,20 @@ class GPModel(ApproximateGP):
             learn_inducing (bool): Learn best inducing points or not
             batch (int): The number of GPs to train independently in the batch [B]
         """
+        outputscale_constraint = Interval(0.05, 20.0)
+        noise_constraint = Interval(5e-4, 0.2)
+        lengthscale_constraint = Interval(0.005, 10.0)  
+
         variational_distribution = CholeskyVariationalDistribution(inducing_points.size(0))
         variational_strategy = VariationalStrategy(self, inducing_points, variational_distribution, learn_inducing_locations=learn_inducing)
         super(GPModel, self).__init__(variational_strategy)
         self.mean_module = gpytorch.means.ConstantMean(batch_shape=torch.Size([batch]))
-        self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernel(ard_num_dims=input_dims, batch_shape=torch.Size([batch])), batch_shape=torch.Size([batch]))
-        self.likelihood = gpytorch.likelihoods.GaussianLikelihood()
+        self.base_kernel = gpytorch.kernels.MaternKernel(lengthscale_constraint=lengthscale_constraint,nu=2.5,ard_num_dims=input_dims,batch_shape=torch.Size([batch]))
+        self.covar_module = gpytorch.kernels.ScaleKernel(self.base_kernel,batch_shape=torch.Size([batch]),outputscale_constraint=outputscale_constraint) #
+        self.likelihood = gpytorch.likelihoods.GaussianLikelihood(noise_constraint=noise_constraint)
+
+        #self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernel(ard_num_dims=input_dims, batch_shape=torch.Size([batch])), batch_shape=torch.Size([batch]))
+        #self.likelihood = gpytorch.likelihoods.GaussianLikelihood()
     def forward(self, x):
         """Forward evaluation of the GP model
 
