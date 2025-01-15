@@ -53,7 +53,7 @@ class GPModel(ApproximateGP):
         mean_x = self.mean_module(x)
         covar_x = self.covar_module(x)
         return gpytorch.distributions.MultivariateNormal(mean_x, covar_x)
-    def predict(self, test_loader):
+    def predict(self, test_loader, n_samples=None):
         """Predict GP means and variances as a batch
 
         Args:
@@ -66,8 +66,18 @@ class GPModel(ApproximateGP):
         with torch.no_grad():
             mus = []
             variances = []
+            samples = []
             for x_batch, y_batch in test_loader:
                 preds = self.likelihood(self(x_batch))
-                mus.append(preds.mean)
-                variances.append(preds.variance)
-        return torch.cat(mus, dim=-1), torch.cat(variances, dim=-1)
+                if n_samples is None:
+                    mus.append(preds.mean)
+                    variances.append(preds.variance)
+                else:
+                    samples.append(preds.sample(torch.Size((n_samples,))))
+            
+            if samples is None:
+                return (torch.cat(mus, dim=0), torch.cat(variances, dim=0))
+            else:
+                return torch.cat(samples, dim=2)
+
+

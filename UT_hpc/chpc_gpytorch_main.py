@@ -27,16 +27,19 @@ def parse_args():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
 
-    parser.add_argument('--save_dir', '-d', type=str, default='data/GP/GPTEST')
-    parser.add_argument('--n_data', type=int, default=4_000)
-    parser.add_argument('--grid_dim', type=int, default=100)
+    parser.add_argument('--save_dir', '-d', type=str, default='data/GP/GP_TEST/GP1')
+    parser.add_argument('--n_data', type=int, default=80_000)
+    parser.add_argument('--grid_dim', type=int, default=700)
     parser.add_argument('--verbose', '-v', type=int, default=1)
     parser.add_argument('--batch_size', type=int, default=1000)
     parser.add_argument('--n_inducing', type=int, default=1000)
-    parser.add_argument('--max_iter', type=int, default=500)
-    parser.add_argument('--y_dim', type=int, default=0)
-    parser.add_argument('--run_name', type=str, default='GP')
+    parser.add_argument('--max_iter', type=int, default=300)
+    parser.add_argument('--y_dim', type=int, default=2)
+    parser.add_argument('--run_name', type=str, default='Regular')
     parser.add_argument('--resume', type=int, default=0)
+    parser.add_argument('--sample', type=int, default=1)
+    parser.add_argument('--n_samples', type=int, default=50)
+    parser.add_argument('--sample_dir', type=str, default='data/')
 
     return parser.parse_args()
 
@@ -44,27 +47,20 @@ if __name__ == "__main__":
     parser = parse_args()
 
     LOG = (-0.5, 2.0)
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    #device = torch.device("cpu")
+    #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cpu")
     dtype = torch.float
 
     gen = TurbulenceClosureDataGenerator(model='SSG')
-    train_x, train_y = generate_log_data(gen, LOG, parser.n_data, shuffle=True, gen_type="d_condition", d_condition=">=")
+    train_x, train_y = generate_log_data(gen, LOG, parser.n_data, shuffle=True, gen_type="All", d_condition="<=")
 
     x_transform_obj = CustomScalerX().fit(train_x)
     y_transform_obj = StandardScaler().fit(train_y[:, parser.y_dim].reshape(-1,1))
     train_x_norm = torch.tensor(x_transform_obj.transform(train_x), dtype=dtype).to(device)
-
-    test = train_x_norm.mean(dim=0)
-    test1 = train_x_norm.std(dim=0)
-
     train_y_norm = torch.tensor(y_transform_obj.transform(train_y[:, parser.y_dim].reshape(-1,1)), dtype=dtype).to(device)
 
-    testy = train_y_norm.mean(dim=0)
-    testy1 = train_y_norm.std(dim=0)
-
     BATCH_SIZE = parser.batch_size
-    NUM_EPOCHS = parser.max_iter
+    NUM_EPOCHS = parser.max_iter if not parser.sample else 0
     NUM_INDUCING = parser.n_inducing
     NUM_DIM = train_x_norm.shape[1]
     INDUCING_PTS = (-1+2*torch.rand((NUM_INDUCING, NUM_DIM))).to(device) # train_x_norm # 
@@ -81,9 +77,10 @@ if __name__ == "__main__":
                     train_inp=train_x_norm, train_out=train_y_norm,
                     device=device)
 
-    if parser.resume:
-        if parser.verbose:
-            print("Resuming training")
+    if parser.verbose and not parser.resume:
+        print("Resuming Training of the GP model")
+
+    if parser.resume or parser.sample:
         model_params = torch.load(os.path.join(parser.save_dir, f"{parser.run_name}_{parser.y_dim}_Params.pt"))
     else:
         model_params = None
@@ -94,10 +91,25 @@ if __name__ == "__main__":
     save_dir = parser.save_dir
     os.makedirs(save_dir, exist_ok=True)
 
-    if parser.verbose:
-        print(f"Saving model to {save_dir}")
+    if not parser.sample:
 
-    torch.save(trained_model.state_dict(), os.path.join(save_dir, f"{parser.run_name}_{parser.y_dim}_Params.pt"))
+        if parser.verbose:
+            print(f"Saving model to {save_dir}")
+        torch.save(trained_model.state_dict(), os.path.join(save_dir, f"{parser.run_name}_{parser.y_dim}_Params.pt"))
+
+
+    if parser.sample:
+        sample_x = np.load(os.path.join(parser.sample_dir, "etas.npy"))
+        sample_y = np.load(os.path.join(parser.sample_dir, "gs.npy"))
+        sample_y = sample_y[:, parser.y_dim].reshape(1, -1)
+        sample_x = x_transform_obj.transform(sample_x)
+        sample_x = torch.tensor(sample_x, dtype=dtype, device=device)
+        print("Sampling from the model")
+        samples = sgp.predict(sample_x, trained_model, batch_size=100, n_samples=parser.n_samples).squeeze().cpu().detach().numpy()
+
+        np.save(os.path.join(save_dir, f"{parser.run_name}_{parser.y_dim}_Samples.npy"), samples)
+
+        sys.exit(0)
 
     ##### Testing
 
@@ -116,7 +128,7 @@ if __name__ == "__main__":
     if parser.verbose:
         print("Getting predictions for test data")
 
-    predictive_means, predictive_variances = sgp.predict(test_x_norm, trained_model, batch_size=100)
+    predictive_means, predictive_variances = sgp.predict(test_x_norm, trained_model, batch_size=50)
 
     predictive_means = predictive_means.cpu().detach().numpy()
     predictive_variances = predictive_variances.cpu().detach().numpy()

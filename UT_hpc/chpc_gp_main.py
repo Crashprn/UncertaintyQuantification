@@ -62,6 +62,7 @@ def train_test(parser):
     kernel = RBFKernel(amplitude=10.0, length_scale=1e-5, device=DEVICE).to(DEVICE)
     gp = GaussianProcessRegressor(
         kernel=kernel,
+        noise=0.1,
         batch_size=parser.batch_size,
         device=DEVICE,
         verbose=parser.verbose,
@@ -153,7 +154,7 @@ def get_data(n_points):
     eta_1_range = (10**np.array([-.3, 0.0]))**2
     eta_2_range = (10**np.array([-.3, 0.0]))**2
 
-    etas_train, gs_train = generate_log_data(SSG_gen, DATA_BOUNDS_LOG, n_points, shuffle=True, gen_type="d_condition", d_condition='>=')
+    etas_train, gs_train = generate_log_data(SSG_gen, DATA_BOUNDS_LOG, n_points, shuffle=True, gen_type="add_out_noise", noise=0.001**2)
 
     return etas_train, gs_train
 

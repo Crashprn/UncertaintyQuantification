@@ -68,7 +68,6 @@ class SinusoidalKernel(nn.Module):
 class GaussianProcessRegressor:
     def __init__(self, kernel, noise=0.0, max_iter=1000, lr=1e-3, batch_size=32, tol=1e-2, device=None, delta=1e-10, verbose=True):
         self.kernel = kernel
-        self.noise = noise
         self.max_iter = max_iter
         self.lr = lr
         self.tol = tol
@@ -76,6 +75,7 @@ class GaussianProcessRegressor:
         self.delta = delta
         self.batch_size = batch_size
         self.verbose = verbose
+        self.noise = nn.Parameter(torch.tensor(noise, device=self.device), requires_grad=True if noise > 0 else False)
     
     def fit(self, X, y):
         self.L = None
@@ -84,13 +84,15 @@ class GaussianProcessRegressor:
         self.losses = []
         dataloader = DataLoader(TensorDataset(X, y), batch_size=self.batch_size, shuffle=True)
 
-
-        optimizer = torch.optim.Adam(self.kernel.parameters(), lr=self.lr)
+        if self.noise.requires_grad:
+            optimizer = torch.optim.Adam(list(self.kernel.parameters()) + [self.noise], lr=self.lr)
+        else:
+            optimizer = torch.optim.Adam(self.kernel.parameters(), lr=self.lr)
 
         for i in range(self.max_iter):
             for X_batch, y_batch in dataloader:
                 optimizer.zero_grad()
-                K = self.kernel(X_batch, X_batch) + (self.noise + self.delta) * torch.eye(X_batch.shape[0], device=self.device)
+                K = self.kernel(X_batch, X_batch) + (self.noise**2 + self.delta) * torch.eye(X_batch.shape[0], device=self.device)
                 self.L = torch.linalg.cholesky(K)
 
                 loss = self.neg_log_likelihood(self.L, y_batch)
@@ -103,7 +105,7 @@ class GaussianProcessRegressor:
                 print(f'Iteration {i:6d}, Loss: {loss.item():10.2f}')
         
         # Compute final Cholesky decomposition of the kernel matrix and save the inverse
-        K = self.kernel(X, X) + (self.noise + self.delta) * torch.eye(X.shape[0], device=self.device)
+        K = self.kernel(X, X) + (self.noise**2 + self.delta) * torch.eye(X.shape[0], device=self.device)
         self.L = torch.linalg.cholesky(K)
         self.K_inv = torch.cholesky_inverse(self.L)
 

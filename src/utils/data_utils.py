@@ -7,7 +7,8 @@ def generate_log_data(generator, scale, n, shuffle=False, gen_type="All", **kwar
     include_area = False
     drop_eta_1 = False
     drop_eta_2 = False
-    add_noise = False
+    add_out_noise = False
+    add_in_noise = False
     discriminant_condition = False
 
     match gen_type:
@@ -19,8 +20,10 @@ def generate_log_data(generator, scale, n, shuffle=False, gen_type="All", **kwar
             drop_eta_1 = True
         case "drop_eta_2":
             drop_eta_2 = True
-        case "add_noise":
-            add_noise = True
+        case "add_out_noise":
+            add_out_noise = True
+        case "add_in_noise":
+            add_in_noise = True
         case "d_condition":
             discriminant_condition = True
         case _:
@@ -81,16 +84,38 @@ def generate_log_data(generator, scale, n, shuffle=False, gen_type="All", **kwar
             log_scale_2 = log_scale_2[kept_points]
         else:
             raise ValueError("d_condition must be specified when type is d_condition")
+    
+    if add_in_noise:
+        if "num_samples" in kwargs and "noise" in kwargs:
+            num_samples = kwargs["num_samples"]
+            noise = kwargs["noise"]
+            linear_scale_1 = (10**log_scale_1)**2
+            linear_scale_2 = (10**log_scale_2)**2
+
+            G_samples = np.zeros((linear_scale_1.shape[0], 3, num_samples + 1))
+
+            for i in range(num_samples):
+                linear_scale_1_noise = linear_scale_1 + np.random.normal(0, noise, linear_scale_1.shape)
+                linear_scale_2_noise = linear_scale_2 + np.random.normal(0, noise, linear_scale_2.shape)
+
+                etas, G_s = generator(linear_scale_1_noise, linear_scale_2_noise)
+                G_samples[:, :, i] = G_s
+            
+            etas, G_s = generator(linear_scale_1, linear_scale_2)
+            G_samples[:, :, num_samples] = G_s
+            
+            return etas, G_samples
 
 
     etas, G_s = generator((10**log_scale_1)**2, (10**log_scale_2)**2)
 
-    if add_noise:
+    if add_out_noise:
         if "noise" in kwargs:
             noise = kwargs["noise"]
             G_s += np.random.normal(0, noise, G_s.shape)
         else:
             raise ValueError("noise must be specified when type is add_noise")
+        
 
     if drop_eta_1:
         etas[:, 0] = 0

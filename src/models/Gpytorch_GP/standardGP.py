@@ -77,7 +77,7 @@ class standardGP():
         model.eval()
         likelihood.eval()
         return model
-    def predict(self, test_x, model, batch_size=1):
+    def predict(self, test_x, model, batch_size=1, n_samples=None):
         """Predict using the GP model
 
         Args:
@@ -91,5 +91,9 @@ class standardGP():
         with torch.no_grad():
             test_dataset = TensorDataset(test_x, test_y)
             test_loader = DataLoader(test_dataset, batch_size=batch_size)
-            predictive_means, predictive_variances = model.predict(test_loader)
-        return predictive_means, predictive_variances
+            out = model.predict(test_loader, n_samples)
+
+        if n_samples is None:
+            return out[0], out[1]
+        else:
+            return out 

@@ -7,7 +7,7 @@ import pyro.distributions as dist
 from pyro.nn import PyroModule, PyroSample
 
 class TurbulenceNetwork(nn.Module):
-    def __init__(self, input_dim: int, output_dim: int, num_layers: int, h_dim:int, dropout:list[float]=None) -> None:
+    def __init__(self, input_dim: int, output_dim: int, num_layers: int, h_dim:int, dropout:list[float]=None, out_noise:bool = False) -> None:
         super(TurbulenceNetwork, self).__init__()
         self.input_dim = input_dim
         self.output_dim = output_dim
@@ -30,6 +30,9 @@ class TurbulenceNetwork(nn.Module):
                 layers.append(nn.Linear(h_dim, h_dim))
                 layers.append(nn.ReLU())
                 layers.append(nn.Dropout(self.dropout[i]))
+        
+        if out_noise:
+            self.sigma = nn.Parameter(torch.ones((1,output_dim))*0.1)
 
 
         self.layers = nn.Sequential(*layers)
@@ -40,9 +43,13 @@ class TurbulenceNetwork(nn.Module):
             if isinstance(m, nn.Dropout):
                 m.train()
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        out1 = self.layers(x)
-        return out1
+    def forward(self, x: torch.Tensor, noise=True) -> torch.Tensor:
+        if hasattr(self, 'sigma') and noise:
+            out1 = self.layers(x)
+            return out1, self.sigma**2
+        else:
+            out1 = self.layers(x)
+            return out1
 
 
 class TurbulenceNetworkBayesian(PyroModule):
@@ -96,6 +103,7 @@ class TurbulenceNetworkBayesian(PyroModule):
                     if activation is not None:
                         self.layers.append(activation())
         
+        self.sigma = PyroSample(dist.Gamma(self.output_prior_conc_rate[0], self.output_prior_conc_rate[1]).expand([self.output_dim]).to_event(1))
 
     def forward(self, x: torch.Tensor, y=None) -> torch.Tensor:
 
@@ -104,8 +112,7 @@ class TurbulenceNetworkBayesian(PyroModule):
 
         mu = x
 
-        sigma = pyro.sample('sigma', dist.Gamma(self.output_prior_conc_rate[0], self.output_prior_conc_rate[1]).expand([self.output_dim]).to_event(1))
-        sigma = torch.diag(1.0/sigma)
+        sigma = torch.diag(self.sigma**2)
 
 
         with pyro.plate("data", size=self.data_size, subsample_size=x.shape[0]):
