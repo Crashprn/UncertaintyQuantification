@@ -2,7 +2,7 @@ import numpy as np
 
 from sklearn.preprocessing import StandardScaler
 
-def generate_log_data(generator, scale, n, shuffle=False, gen_type="All", **kwargs):
+def generate_log_data(generator, scale, n, shuffle=False, gen_type="All", noise_type=None, **kwargs):
     exclude_area = False
     include_area = False
     drop_eta_1 = False
@@ -20,12 +20,16 @@ def generate_log_data(generator, scale, n, shuffle=False, gen_type="All", **kwar
             drop_eta_1 = True
         case "drop_eta_2":
             drop_eta_2 = True
-        case "add_out_noise":
-            add_out_noise = True
-        case "add_in_noise":
-            add_in_noise = True
         case "d_condition":
             discriminant_condition = True
+        case _:
+            pass
+    
+    match noise_type:
+        case "out_noise":
+            add_out_noise = True
+        case "in_noise":
+            add_in_noise = True
         case _:
             pass
     
