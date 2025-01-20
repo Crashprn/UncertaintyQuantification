@@ -5,7 +5,7 @@ current_dir=$(pwd)
 procs_per_node=64
 NN=1
 NP=$(($NN * $procs_per_node))
-save_dir="data/GP_TEST/GP1"
+save_dir="data/GP_Pytorch/Regular_Alea/"
 n_data=80000
 grid_dim=700
 batch_size=26000
@@ -14,7 +14,7 @@ n_inducing=6000
 verbose=1
 y_dim=$1
 run_name="GPYTORCH"
-resume=1
+resume=0
 
 
 # Set up batch script:

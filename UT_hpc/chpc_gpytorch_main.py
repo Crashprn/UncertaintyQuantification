@@ -52,7 +52,7 @@ if __name__ == "__main__":
     dtype = torch.float
 
     gen = TurbulenceClosureDataGenerator(model='SSG')
-    train_x, train_y = generate_log_data(gen, LOG, parser.n_data, shuffle=True, gen_type="All", d_condition="<=")
+    train_x, train_y = generate_log_data(gen, LOG, parser.n_data, shuffle=True, gen_type="All", d_condition="<=", noise_type="out_noise", noise=0.001**2)
 
     x_transform_obj = CustomScalerX().fit(train_x)
     y_transform_obj = StandardScaler().fit(train_y[:, parser.y_dim].reshape(-1,1))
