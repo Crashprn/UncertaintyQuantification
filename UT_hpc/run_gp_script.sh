@@ -6,14 +6,14 @@ current_dir=$(pwd)
 procs_per_node=64
 NN=1
 NP=$(($NN * $procs_per_node))
-save_dir="data/Aleatoric/D_GT_0/GP1"
+save_dir="data/Aleatoric/D_LT_0/GP1"
 n_data=80000
 grid_dim=700
 batch_size=26000
 max_iter=600
 verbose=1
 dim_y=$1
-run_name="D_GT_0_Alea"
+run_name="D_LT_0_Alea"
 
 
 # Set up batch script:
