@@ -13,7 +13,7 @@ max_iter=600
 n_inducing=6000
 verbose=1
 y_dim=$1
-run_name="GPYTORCH"
+run_name="Regular_Alea"
 resume=0
 
 
