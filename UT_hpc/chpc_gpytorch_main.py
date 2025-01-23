@@ -77,7 +77,7 @@ if __name__ == "__main__":
                     train_inp=train_x_norm, train_out=train_y_norm,
                     device=device)
 
-    if parser.verbose and not parser.resume:
+    if parser.verbose and parser.resume:
         print("Resuming Training of the GP model")
 
     if parser.resume or parser.sample:
