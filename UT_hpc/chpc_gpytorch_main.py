@@ -37,7 +37,7 @@ def parse_args():
     parser.add_argument('--y_dim', type=int, default=2)
     parser.add_argument('--run_name', type=str, default='Regular')
     parser.add_argument('--resume', type=int, default=0)
-    parser.add_argument('--sample', type=int, default=1)
+    parser.add_argument('--sample', type=int, default=0)
     parser.add_argument('--n_samples', type=int, default=50)
     parser.add_argument('--sample_dir', type=str, default='data/')
 
