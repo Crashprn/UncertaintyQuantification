@@ -56,7 +56,7 @@ class standardGP():
         Returns:
             model: The trained GP model as a gpytorch object    
         """
-        noise_constraint = Interval(1e-7, 0.1)
+        noise_constraint = Interval(1e-8, 0.1)
         likelihood = gpytorch.likelihoods.GaussianLikelihood(batch_shape=torch.Size([self.num_GPs]), noise_constraint=noise_constraint).to(self.device)
         model = GPModel(inducing_points=self.initial_inducing_pts, input_dims=self.num_dim, learn_inducing=self.learn_inducing, batch=self.num_GPs).to(self.device)
         if model_params is not None:
