@@ -6,14 +6,15 @@ current_dir=$(pwd)
 procs_per_node=64
 NN=1
 NP=$(($NN * $procs_per_node))
-save_dir="data/Aleatoric/D_LT_0/GP1"
+save_dir="data/Aleatoric/Regular/GP1"
 n_data=80000
 grid_dim=700
 batch_size=26000
 max_iter=600
 verbose=1
 dim_y=$1
-run_name="D_LT_0_Alea"
+run_name="Regular"
+resume=1
 
 
 # Set up batch script:
@@ -30,7 +31,7 @@ module load miniconda3/latest
 conda activate base
 cd $current_dir
 sleep 5
-python3 -u UT_hpc/chpc_gp_main.py --save_dir $save_dir --n_data $n_data --grid_dim $grid_dim --verbose $verbose --dim_y $dim_y --max_iter $max_iter --run_name $run_name --batch_size $batch_size
+python3 -u UT_hpc/chpc_gp_main.py --save_dir $save_dir --n_data $n_data --grid_dim $grid_dim --verbose $verbose --dim_y $dim_y --max_iter $max_iter --run_name $run_name --batch_size $batch_size --resume $resume
 sleep 5
 exit 0
 EOF
