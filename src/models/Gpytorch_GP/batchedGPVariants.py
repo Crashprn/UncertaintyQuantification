@@ -75,7 +75,7 @@ class GPModel(ApproximateGP):
                 else:
                     samples.append(preds.sample(torch.Size((n_samples,))))
             
-            if samples is None:
+            if len(samples) <= 0:
                 return (torch.cat(mus, dim=0), torch.cat(variances, dim=0))
             else:
                 return torch.cat(samples, dim=2)

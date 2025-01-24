@@ -29,11 +29,11 @@ def parse_args():
 
     parser.add_argument('--save_dir', '-d', type=str, default='data/GP/GP_TEST/GP1')
     parser.add_argument('--n_data', type=int, default=80_000)
-    parser.add_argument('--grid_dim', type=int, default=700)
+    parser.add_argument('--grid_dim', type=int, default=100)
     parser.add_argument('--verbose', '-v', type=int, default=1)
     parser.add_argument('--batch_size', type=int, default=1000)
     parser.add_argument('--n_inducing', type=int, default=1000)
-    parser.add_argument('--max_iter', type=int, default=300)
+    parser.add_argument('--max_iter', type=int, default=0)
     parser.add_argument('--y_dim', type=int, default=2)
     parser.add_argument('--run_name', type=str, default='Regular')
     parser.add_argument('--resume', type=int, default=0)
@@ -137,7 +137,7 @@ if __name__ == "__main__":
     predictive_variances_real = predictive_variances*y_transform_obj.scale_
 
     if parser.verbose:
-        print(f"Mean Absolute Error: {np.abs(test_y_norm.squeeze() - predictive_means_real.squeeze()).mean()}")
+        print(f"Mean Absolute Error: {np.abs(test_y_norm.squeeze() - predictive_means_real.reshape(-1)).mean()}")
         print("Saving predictions to ", save_dir + "/" + parser.run_name)
 
     np.save(os.path.join(save_dir, f"{parser.run_name}_Mean{parser.y_dim}.npy"), predictive_means_real)
