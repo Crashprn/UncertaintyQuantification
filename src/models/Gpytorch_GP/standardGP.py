@@ -46,7 +46,7 @@ class standardGP():
         self.train_x = train_inp
         self.train_y = train_out
         self.device = device
-    def train(self, epochs, learning_rate, model_params=None, train_noise=False):
+    def train(self, epochs, learning_rate, model_params=None, likelihood_params=None, train_noise=False):
         """Train the GP model
 
         Args:
@@ -61,6 +61,8 @@ class standardGP():
         model = GPModel(inducing_points=self.initial_inducing_pts, input_dims=self.num_dim, learn_inducing=self.learn_inducing, batch=self.num_GPs).to(self.device)
         if model_params is not None:
             model.load_state_dict(model_params)
+        if likelihood_params is not None:
+            likelihood.load_state_dict(likelihood_params)
         model.train()
         likelihood.train()
         if train_noise:
@@ -81,7 +83,7 @@ class standardGP():
             optimizer.step()
         model.eval()
         likelihood.eval()
-        return model
+        return model, likelihood
     def predict(self, test_x, model, batch_size=1, n_samples=None):
         """Predict using the GP model
 
