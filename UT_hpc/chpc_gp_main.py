@@ -34,9 +34,10 @@ def parse_args():
     parser.add_argument('--grid_dim', type=int, default=700)
     parser.add_argument('--verbose', '-v', type=int, default=1)
     parser.add_argument('--batch_size', type=int, default=1000)
-    parser.add_argument('--max_iter', type=int, default=1000)
+    parser.add_argument('--max_iter', type=int, default=0)
     parser.add_argument('--dim_y', type=int, default=0)
     parser.add_argument('--run_name', type=str, default='GP')
+    parser.add_argument('--resume', type=int, default=0)
 
     return parser.parse_args()
 
@@ -58,16 +59,28 @@ def train_test(parser):
     x_train = torch.tensor(x_train, device=DEVICE, dtype=DTYPE)
     y_train = torch.tensor(y_train, device=DEVICE, dtype=DTYPE)
 
+    if parser.resume:
+        param_dict = pickle.load(open(os.path.join(parser.save_dir, f"{parser.run_name}_{parser.dim_y}_KernelParams.pkl"), "rb"))
+        amplitude = param_dict['amplitude']
+        length_scale = param_dict['length_scale']
+        noise = param_dict['noise'] if "noise" in param_dict else 0.1
+        lr = 1e-4
+    else:
+        amplitude = 15.0
+        length_scale = 1e-5
+        noise = 0.1
+        lr = 1e-3
 
-    kernel = RBFKernel(amplitude=15.0, length_scale=1e-5, device=DEVICE).to(DEVICE)
+
+    kernel = RBFKernel(amplitude=amplitude, length_scale=length_scale, device=DEVICE).to(DEVICE)
     gp = GaussianProcessRegressor(
         kernel=kernel,
-        noise=0.1,
+        noise=noise,
         batch_size=parser.batch_size,
         device=DEVICE,
         verbose=parser.verbose,
         max_iter=parser.max_iter,
-        lr=1e-3,
+        lr=lr,
         delta=1e-6
     )
 
@@ -84,6 +97,9 @@ def train_test(parser):
     os.makedirs(save_dir, exist_ok=True)
 
     param_dict = gp.kernel.get_params()
+    param_dict['noise'] = gp.noise.cpu().detach().item()
+
+
 
     if parser.verbose:
         print("---> Saving Kernel Hyperparameters")

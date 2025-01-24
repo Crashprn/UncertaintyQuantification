@@ -46,7 +46,7 @@ class standardGP():
         self.train_x = train_inp
         self.train_y = train_out
         self.device = device
-    def train(self, epochs, learning_rate, model_params=None):
+    def train(self, epochs, learning_rate, model_params=None, train_noise=False):
         """Train the GP model
 
         Args:
@@ -63,7 +63,12 @@ class standardGP():
             model.load_state_dict(model_params)
         model.train()
         likelihood.train()
-        optimizer = Adam(model.parameters(), lr=learning_rate)
+        if train_noise:
+            params = list(model.parameters())+ list(likelihood.parameters())
+        else:
+            params = model.parameters()
+
+        optimizer = Adam(params, lr=learning_rate)
         mll = gpytorch.mlls.VariationalELBO(likelihood, model, num_data=self.train_x.shape[1])
         for i in range(epochs):
             optimizer.zero_grad()

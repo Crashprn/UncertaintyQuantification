@@ -29,7 +29,7 @@ def parse_args():
 
     parser.add_argument('--save_dir', '-d', type=str, default='data/GP/GP_TEST/GP1')
     parser.add_argument('--n_data', type=int, default=80_000)
-    parser.add_argument('--grid_dim', type=int, default=700)
+    parser.add_argument('--grid_dim', type=int, default=100)
     parser.add_argument('--verbose', '-v', type=int, default=1)
     parser.add_argument('--batch_size', type=int, default=1000)
     parser.add_argument('--n_inducing', type=int, default=1000)
@@ -85,7 +85,7 @@ if __name__ == "__main__":
     else:
         model_params = None
 
-    trained_model = sgp.train(epochs=NUM_EPOCHS,learning_rate=0.01, model_params=model_params)
+    trained_model = sgp.train(epochs=NUM_EPOCHS,learning_rate=0.01, model_params=model_params, train_noise=True)
 
     ##### Save the model
     save_dir = parser.save_dir
@@ -130,14 +130,15 @@ if __name__ == "__main__":
 
     predictive_means, predictive_variances = sgp.predict(test_x_norm, trained_model, batch_size=50)
 
-    predictive_means = predictive_means.cpu().detach().numpy()
-    predictive_variances = predictive_variances.cpu().detach().numpy()
+
+    predictive_means = predictive_means.cpu().detach().view(-1,1).numpy()
+    predictive_variances = predictive_variances.cpu().detach().view(-1,1).numpy()
 
     predictive_means_real = y_transform_obj.inverse_transform(predictive_means)
     predictive_variances_real = predictive_variances*y_transform_obj.scale_
 
     if parser.verbose:
-        print(f"Mean Absolute Error: {np.abs(test_y_norm.squeeze() - predictive_means_real.reshape(-1)).mean()}")
+        print(f"Mean Absolute Error: {np.abs(test_y_norm.squeeze() - predictive_means_real.squeeze()).mean()}")
         print("Saving predictions to ", save_dir + "/" + parser.run_name)
 
     np.save(os.path.join(save_dir, f"{parser.run_name}_Mean{parser.y_dim}.npy"), predictive_means_real)

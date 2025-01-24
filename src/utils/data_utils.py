@@ -11,7 +11,7 @@ def generate_log_data(generator, scale, n, shuffle=False, gen_type="All", noise_
     add_in_noise = False
     discriminant_condition = False
 
-    match gen_type:
+    match gen_type.lower():
         case "exclude_area":
             exclude_area = True
         case "include_area":
@@ -25,7 +25,7 @@ def generate_log_data(generator, scale, n, shuffle=False, gen_type="All", noise_
         case _:
             pass
     
-    match noise_type:
+    match noise_type.lower():
         case "out_noise":
             add_out_noise = True
         case "in_noise":
