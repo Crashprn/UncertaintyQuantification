@@ -37,7 +37,7 @@ class GPModel(ApproximateGP):
         self.mean_module = gpytorch.means.ConstantMean(batch_shape=torch.Size([batch]))
         self.base_kernel = gpytorch.kernels.MaternKernel(lengthscale_constraint=lengthscale_constraint,nu=2.5,ard_num_dims=input_dims,batch_shape=torch.Size([batch]))
         self.covar_module = gpytorch.kernels.ScaleKernel(self.base_kernel,batch_shape=torch.Size([batch]),outputscale_constraint=outputscale_constraint) #
-        self.likelihood = gpytorch.likelihoods.GaussianLikelihood(batch_shape=torch.Size([batch,1]), noise_constraint=noise_constraint)
+        self.likelihood = gpytorch.likelihoods.GaussianLikelihood(batch_shape=torch.Size([batch]), noise_constraint=noise_constraint)
         #self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernel(ard_num_dims=input_dims, batch_shape=torch.Size([batch])), batch_shape=torch.Size([batch]))
         #self.likelihood = gpytorch.likelihoods.GaussianLikelihood()
     def forward(self, x):
