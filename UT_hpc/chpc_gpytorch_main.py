@@ -85,7 +85,7 @@ if __name__ == "__main__":
     else:
         model_params = None
 
-    trained_model, likelihood = sgp.train(epochs=NUM_EPOCHS,learning_rate=0.01, model_params=model_params, train_noise=True)
+    trained_model = sgp.train(epochs=NUM_EPOCHS,learning_rate=0.01, model_params=model_params, train_noise=True)
 
     ##### Save the model
     save_dir = parser.save_dir
@@ -96,7 +96,6 @@ if __name__ == "__main__":
         if parser.verbose:
             print(f"Saving model to {save_dir}")
         torch.save(trained_model.state_dict(), os.path.join(save_dir, f"{parser.run_name}_{parser.y_dim}_Params.pt"))
-        torch.save(likelihood.state_dict(), os.path.join(save_dir, f"{parser.run_name}_{parser.y_dim}_Likelihood.pt"))
 
 
 

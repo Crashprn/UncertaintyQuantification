@@ -56,22 +56,12 @@ class standardGP():
         Returns:
             model: The trained GP model as a gpytorch object    
         """
-        noise_constraint = Interval(1e-8, 0.1)
-        likelihood = gpytorch.likelihoods.GaussianLikelihood(batch_shape=torch.Size([self.num_GPs]), noise_constraint=noise_constraint).to(self.device)
         model = GPModel(inducing_points=self.initial_inducing_pts, input_dims=self.num_dim, learn_inducing=self.learn_inducing, batch=self.num_GPs).to(self.device)
         if model_params is not None:
             model.load_state_dict(model_params)
-        if likelihood_params is not None:
-            likelihood.load_state_dict(likelihood_params)
         model.train()
-        likelihood.train()
-        if train_noise:
-            params = list(model.parameters())+ list(likelihood.parameters())
-        else:
-            params = model.parameters()
-
-        optimizer = Adam(params, lr=learning_rate)
-        mll = gpytorch.mlls.VariationalELBO(likelihood, model, num_data=self.train_x.shape[1])
+        optimizer = Adam(model.parameters(), lr=learning_rate)
+        mll = gpytorch.mlls.VariationalELBO(model.likelihood, model, num_data=self.train_x.shape[1])
         for i in range(epochs):
             optimizer.zero_grad()
             output = model(self.train_x)
@@ -82,8 +72,7 @@ class standardGP():
             ))
             optimizer.step()
         model.eval()
-        likelihood.eval()
-        return model, likelihood
+        return model
     def predict(self, test_x, model, batch_size=1, n_samples=None):
         """Predict using the GP model
 
