@@ -61,7 +61,7 @@ def train_test(parser):
 
     if parser.resume:
         if parser.verbose:
-            print("Resuming Training from save: " + os.path.join(parser.save_dir, f"{parser.run_name}_{parser.dim_y}_KernelParams.pkl")
+            print("Resuming Training from save: " + os.path.join(parser.save_dir, f"{parser.run_name}_{parser.dim_y}_KernelParams.pkl"))
         param_dict = pickle.load(open(os.path.join(parser.save_dir, f"{parser.run_name}_{parser.dim_y}_KernelParams.pkl"), "rb"))
         amplitude = param_dict['amplitude']
         length_scale = param_dict['length_scale']
