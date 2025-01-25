@@ -14,7 +14,7 @@ n_inducing=6000
 verbose=1
 y_dim=$1
 run_name="Regular_Alea"
-resume=0
+resume=1
 
 
 # Set up batch script:

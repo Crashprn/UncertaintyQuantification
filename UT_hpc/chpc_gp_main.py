@@ -60,11 +60,13 @@ def train_test(parser):
     y_train = torch.tensor(y_train, device=DEVICE, dtype=DTYPE)
 
     if parser.resume:
+        if parser.verbose:
+            print("Resuming Training from save: " + os.path.join(parser.save_dir, f"{parser.run_name}_{parser.dim_y}_KernelParams.pkl")
         param_dict = pickle.load(open(os.path.join(parser.save_dir, f"{parser.run_name}_{parser.dim_y}_KernelParams.pkl"), "rb"))
         amplitude = param_dict['amplitude']
         length_scale = param_dict['length_scale']
         noise = param_dict['noise'] if "noise" in param_dict else 0.1
-        lr = 1e-4
+        lr = 1e-3
     else:
         amplitude = 15.0
         length_scale = 1e-5
