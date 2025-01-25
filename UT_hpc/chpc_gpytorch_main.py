@@ -85,7 +85,7 @@ if __name__ == "__main__":
     else:
         model_params = None
 
-    trained_model = sgp.train(epochs=NUM_EPOCHS,learning_rate=0.01, model_params=model_params, train_noise=True)
+    trained_model = sgp.train(epochs=NUM_EPOCHS,learning_rate=0.001, model_params=model_params, train_noise=True)
 
     ##### Save the model
     save_dir = parser.save_dir
