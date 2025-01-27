@@ -46,7 +46,7 @@ class standardGP():
         self.train_x = train_inp
         self.train_y = train_out
         self.device = device
-    def train(self, epochs, learning_rate, model_params=None, likelihood_params=None, train_noise=False):
+    def train(self, epochs, learning_rate, model_params=None, train_noise=False):
         """Train the GP model
 
         Args:

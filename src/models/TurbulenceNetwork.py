@@ -6,8 +6,18 @@ import pyro
 import pyro.distributions as dist
 from pyro.nn import PyroModule, PyroSample
 
+
+'''
+Feedforward neural network for turbulence modeling.
+'''
 class TurbulenceNetwork(nn.Module):
-    def __init__(self, input_dim: int, output_dim: int, num_layers: int, h_dim:int, dropout:list[float]=None, out_noise:bool = False) -> None:
+    def __init__(
+            self,
+            input_dim: int, output_dim: int,
+            num_layers: int, h_dim:int,
+            dropout:list[float]=None,
+            out_noise:bool = False
+        ) -> None:
         super(TurbulenceNetwork, self).__init__()
         self.input_dim = input_dim
         self.output_dim = output_dim
@@ -37,8 +47,10 @@ class TurbulenceNetwork(nn.Module):
 
         self.layers = nn.Sequential(*layers)
                 
-    
-    def dropout_on(self):
+    '''
+    Turn on dropout layers prediction time.
+    '''
+    def dropout_on(self) -> None:
         for m in self.layers.modules():
             if isinstance(m, nn.Dropout):
                 m.train()
@@ -51,7 +63,9 @@ class TurbulenceNetwork(nn.Module):
             out1 = self.layers(x)
             return out1
 
-
+'''
+Bayesian feedforward neural network for turbulence modeling with Gaussian priors.
+'''
 class TurbulenceNetworkBayesian(PyroModule):
     def __init__(
             self,

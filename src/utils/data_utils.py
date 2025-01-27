@@ -25,13 +25,14 @@ def generate_log_data(generator, scale, n, shuffle=False, gen_type="All", noise_
         case _:
             pass
     
-    match noise_type.lower():
-        case "out_noise":
-            add_out_noise = True
-        case "in_noise":
-            add_in_noise = True
-        case _:
-            pass
+    if noise_type is not None:
+        match noise_type.lower():
+            case "out_noise":
+                add_out_noise = True
+            case "in_noise":
+                add_in_noise = True
+            case _:
+                pass
     
     log_scale_1 = np.random.uniform(*scale, n)
     log_scale_2 = np.random.uniform(*scale, n)

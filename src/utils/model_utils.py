@@ -12,14 +12,9 @@ def create_skorch_model(model, skorch_NN_type, model_args, skorch_args):
     skorch_model.initialize()
     return skorch_model
 
-def reinitialize_model(pt_name, checkpoint_dir, model, model_type, net_params, train_params):
-    net = create_skorch_model(model, model_type, net_params, train_params)
+def reinitialize_model(pt_name, net):
     net.initialize()
-    net.load_params(f_params=os.path.join(checkpoint_dir,pt_name),
-                    f_optimizer=os.path.join(checkpoint_dir, 'optimizer.pt'),
-                    f_criterion=os.path.join(checkpoint_dir, 'criterion.pt'),
-                    f_history=os.path.join(checkpoint_dir, 'history.json')
-    )
+    net.load_params(f_params=pt_name)
     return net
 
 
