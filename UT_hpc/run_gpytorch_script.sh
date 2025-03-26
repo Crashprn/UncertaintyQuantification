@@ -2,19 +2,19 @@
 
 find . -name "*batch" -delete
 current_dir=$(pwd)
-procs_per_node=64
+procs_per_node=16
 NN=1
 NP=$(($NN * $procs_per_node))
-save_dir="data/GP_Pytorch/Regular_Alea/"
-n_data=80000
+save_dir="data/GP_Pytorch/D_LT_0_Alea_No_Est"
+n_data=20000
 grid_dim=700
 batch_size=26000
-max_iter=600
+max_iter=1000
 n_inducing=6000
 verbose=1
 y_dim=$1
-run_name="Regular_Alea"
-resume=1
+run_name="D_LT_0_Alea_No_Est"
+resume=0
 
 
 # Set up batch script:
@@ -22,11 +22,11 @@ cat > $1.batch << EOF
 #!/bin/bash
 #SBATCH --time=4-00:00:00
 #SBATCH --nodes=$NN
-#SBATCH --mem=500000
+#SBATCH --mem=60000
 #SBATCH -o out.$y_dim
 #SBATCH -e err.$y_dim
-#SBATCH --account=usumae-np
-#SBATCH --partition=usumae-np
+#SBATCH --account=usumae-kp
+#SBATCH --partition=usumae-kp
 module load miniconda3/latest
 conda activate base
 cd $current_dir

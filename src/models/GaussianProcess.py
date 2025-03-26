@@ -86,6 +86,7 @@ class GaussianProcessRegressor:
 
         if self.noise.requires_grad:
             optimizer = torch.optim.Adam(list(self.kernel.parameters()) + [self.noise], lr=self.lr)
+            print("Training noise")
         else:
             optimizer = torch.optim.Adam(self.kernel.parameters(), lr=self.lr)
 

@@ -29,6 +29,7 @@ def generate_log_data(generator, scale, n, shuffle=False, gen_type="All", noise_
         match noise_type.lower():
             case "out_noise":
                 add_out_noise = True
+                print("Out noise")
             case "in_noise":
                 add_in_noise = True
             case _:

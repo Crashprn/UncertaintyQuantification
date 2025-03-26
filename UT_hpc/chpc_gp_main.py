@@ -66,12 +66,12 @@ def train_test(parser):
         amplitude = param_dict['amplitude']
         length_scale = param_dict['length_scale']
         noise = param_dict['noise'] if "noise" in param_dict else 0.1
-        lr = 1e-3
+        lr = 1e-2
     else:
         amplitude = 15.0
         length_scale = 1e-5
-        noise = 0.1
-        lr = 1e-3
+        noise = 0.01
+        lr = 1e-2
 
 
     kernel = RBFKernel(amplitude=amplitude, length_scale=length_scale, device=DEVICE).to(DEVICE)
@@ -172,7 +172,7 @@ def get_data(n_points):
     eta_1_range = (10**np.array([-.3, 0.0]))**2
     eta_2_range = (10**np.array([-.3, 0.0]))**2
 
-    etas_train, gs_train = generate_log_data(SSG_gen, DATA_BOUNDS_LOG, n_points, shuffle=True, gen_type="All", noise_type="out_noise", d_condition="<=", noise=0.001**2)
+    etas_train, gs_train = generate_log_data(SSG_gen, DATA_BOUNDS_LOG, n_points, shuffle=True, gen_type="All", noise_type='out_noise', d_condition="<=",  noise=0.0001)
 
     return etas_train, gs_train
 

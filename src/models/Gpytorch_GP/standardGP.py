@@ -59,6 +59,8 @@ class standardGP():
         model = GPModel(inducing_points=self.initial_inducing_pts, input_dims=self.num_dim, learn_inducing=self.learn_inducing, batch=self.num_GPs).to(self.device)
         if model_params is not None:
             model.load_state_dict(model_params)
+        if not train_noise:
+            model.likelihood.noise_covar.raw_noise.requires_grad = False
         model.train()
         optimizer = Adam(model.parameters(), lr=learning_rate)
         mll = gpytorch.mlls.VariationalELBO(model.likelihood, model, num_data=self.train_x.shape[1])
