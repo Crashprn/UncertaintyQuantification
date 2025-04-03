@@ -16,7 +16,8 @@ class TurbulenceNetwork(nn.Module):
             input_dim: int, output_dim: int,
             num_layers: int, h_dim:int,
             dropout:list[float]=None,
-            out_noise:bool = False
+            out_noise:bool = False,
+            out_noise_scale:float = 0.1
         ) -> None:
         super(TurbulenceNetwork, self).__init__()
         self.input_dim = input_dim
@@ -42,7 +43,7 @@ class TurbulenceNetwork(nn.Module):
                 layers.append(nn.Dropout(self.dropout[i]))
         
         if out_noise:
-            self.sigma = nn.Parameter(torch.ones((1,output_dim))*0.1)
+            self.sigma = nn.Parameter(torch.ones((1,output_dim))*out_noise_scale, requires_grad=True)
 
 
         self.layers = nn.Sequential(*layers)
@@ -58,7 +59,7 @@ class TurbulenceNetwork(nn.Module):
     def forward(self, x: torch.Tensor, noise=True) -> torch.Tensor:
         if hasattr(self, 'sigma') and noise:
             out1 = self.layers(x)
-            return out1, self.sigma**2
+            return out1, self.sigma
         else:
             out1 = self.layers(x)
             return out1
@@ -77,7 +78,8 @@ class TurbulenceNetworkBayesian(PyroModule):
             data_size: int,
             layer_prior=(0,1), 
             output_prior_conc_rate=(3.0, 1.0),
-            activation=nn.ReLU
+            activation=nn.ReLU,
+            train_noise=False
         ) -> None:
         super().__init__()
         self.input_dim = torch.tensor(input_dim , device=device)
@@ -87,6 +89,7 @@ class TurbulenceNetworkBayesian(PyroModule):
         self.output_prior_conc_rate = output_prior_conc_rate
         self.data_size = data_size
         self.activation = activation
+        self.train_noise = train_noise
 
         self.layers = PyroModule[nn.ModuleList]()
 
@@ -117,7 +120,10 @@ class TurbulenceNetworkBayesian(PyroModule):
                     if activation is not None:
                         self.layers.append(activation())
         
-        self.sigma = PyroSample(dist.Gamma(self.output_prior_conc_rate[0], self.output_prior_conc_rate[1]).expand([self.output_dim]).to_event(1))
+        #if self.train_noise:
+        #    self.sigma = PyroSample(dist.Gamma(self.output_prior_conc_rate[0], self.output_prior_conc_rate[1]).expand([self.output_dim]).to_event(1))
+        #else:
+        #    self.sigma = torch.ones((output_dim), device=device, requires_grad=False)
 
     def forward(self, x: torch.Tensor, y=None) -> torch.Tensor:
 
@@ -126,9 +132,13 @@ class TurbulenceNetworkBayesian(PyroModule):
 
         mu = x
 
-        sigma = torch.diag(self.sigma**2)
+        
+        #sigma = torch.diag(self.sigma**2)
 
+        sigma = pyro.sample("sigma", dist.Gamma(self.output_prior_conc_rate[0], self.output_prior_conc_rate[1]).expand([self.output_dim]).to_event(1))
+        sigma = torch.diag(sigma**2)
 
         with pyro.plate("data", size=self.data_size, subsample_size=x.shape[0]):
             obs = pyro.sample("obs", dist.MultivariateNormal(mu, covariance_matrix=sigma), obs=y)
+
         return mu
