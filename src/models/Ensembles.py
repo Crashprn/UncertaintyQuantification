@@ -19,7 +19,8 @@ class DeepEnsemble:
     def load(self, reinit_func, name_generator):
         for i, predictor in enumerate(self.predictors):
             predictor = reinit_func(name_generator(i), predictor)
-            print(f'Predictor {i+1} loaded')
+        
+        print(f'{len(self.predictors)} Predictor(s) loaded')
         return self
 
     '''

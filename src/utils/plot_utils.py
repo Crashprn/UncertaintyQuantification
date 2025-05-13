@@ -3,7 +3,6 @@ from matplotlib.colors import LogNorm, Normalize
 from matplotlib import ticker, scale
 from src.data_gens.TurbulenceClosureDataGenerator import TurbulenceClosureDataGenerator
 import numpy as np
-import math
 
 plt.rcParams['text.usetex'] = True
 

@@ -1,8 +1,39 @@
 import numpy as np
-
 from sklearn.preprocessing import StandardScaler
+import typing as t
 
-def generate_log_data(generator, scale, n, shuffle=False, gen_type="All", noise_type=None, **kwargs):
+'''
+Function for generating data uniformly in log scale using a generator function.
+Parameters:
+generator: 
+    ARSM generator function that takes eta_1 and eta_2 as input and returns etas and G_s.
+scale: (float, float)
+    Tuple of min and max values for the log scale.
+n: int
+    Number of samples to generate.
+shuffle: Bool
+    Boolean indicating whether to shuffle the data or not.
+gen_type: str
+    Type of generation to be performed. Can be one of the following:
+    - "exclude_area": Exclude points in the specified area.
+    - "include_area": Include points in the specified area.
+    - "drop_eta_1": Drop eta_1 values.
+    - "drop_eta_2": Drop eta_2 values.
+    - "d_condition": Apply a discriminant condition.
+noise_type: str
+    Type of noise to be added. Can be one of the following:
+    - "out_noise": Add noise to the output.
+    - "in_noise": Add noise to the input.
+    - None(default): No noise added.
+**kwargs:
+    Additional keyword arguments for the generator function.
+    - d_condition: Discriminant condition for filtering the data.
+    - eta_1_range: Range for eta_1 values.
+    - eta_2_range: Range for eta_2 values.
+    - num_samples: Number of samples for noise generation.
+    - noise: Noise level for the generator function.
+'''
+def generate_log_data(generator, scale: t.Tuple[float, float], n: int, shuffle:bool =False, gen_type:str ="All", noise_type=None, **kwargs):
     exclude_area = False
     include_area = False
     drop_eta_1 = False
@@ -138,7 +169,9 @@ def generate_log_data(generator, scale, n, shuffle=False, gen_type="All", noise_
     
     return etas, G_s
     
-    
+'''
+Custom scaler class that applies a log transformation to the input data
+''' 
 class CustomScalerX:
     epsilon = 1e-8
 
@@ -166,6 +199,9 @@ class CustomScalerX:
 
         return x
 
+'''
+Custom scaler class that applies a log transformation to the output data
+'''
 class CustomScalerY:
     def __init__(self):
         self.epsilon = 1e-8
