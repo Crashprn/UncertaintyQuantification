@@ -107,7 +107,8 @@ chkpt_name: str
     Name of the checkpoint files (default is "pyro").
 '''
 def load_pyro_model(model, path, device, chkpt_name="pyro"):
-    saved_model_dict = torch.load(os.path.join(path, chkpt_name+"_model.pt"))
+    model_path = os.path.join(path, chkpt_name+"_model.pt")
+    saved_model_dict = torch.load(model_path, weights_only=False)
     model.load_state_dict(saved_model_dict["model"])
     guide = saved_model_dict["guide"]
     pyro.get_param_store().load(os.path.join(path, chkpt_name+"_params.pt"), device)

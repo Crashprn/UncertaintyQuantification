@@ -160,10 +160,21 @@ class DiagNLLLoss(nn.Module):
 
         # Returns log(sigma^2)
         #l1 = y_predictions.shape[0] * y_sigmas.sum() + torch.sum(torch.pow((y_true - y_predictions), 2) / torch.exp(y_sigmas))
-
-        # Return sigma^2
-        y_sigmas = y_sigmas**2
-        l2 = torch.log(torch.prod(y_sigmas, dim=1) + self.eta)*y_predictions.shape[0] + torch.sum(torch.pow((y_true - y_predictions), 2)/ y_sigmas)
+        l2 = torch.log(y_sigmas).sum()*y_predictions.shape[0] + torch.sum(torch.pow((y_true - y_predictions), 2)/ y_sigmas)
 
         return l2
 
+class BetaNLL(nn.Module):
+    def __init__(self, beta=1, *args, **kwargs):
+        super(BetaNLL, self).__init__()
+        self.beta = beta
+
+    def forward(self, y_pred, y_true):
+        y_predictions, y_variance = y_pred 
+
+        loss = 0.5 * ((y_predictions - y_true) ** 2 / (y_variance) + torch.log(y_variance))
+
+        if self.beta > 0:
+            loss = loss * (y_variance.detach() ** self.beta)
+
+        return loss.sum()

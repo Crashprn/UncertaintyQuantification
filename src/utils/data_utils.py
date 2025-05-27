@@ -33,13 +33,13 @@ noise_type: str
     - num_samples: Number of samples for noise generation.
     - noise: Noise level for the generator function.
 '''
-def generate_log_data(generator, scale: t.Tuple[float, float], n: int, shuffle:bool =False, gen_type:str ="All", noise_type=None, **kwargs):
+def generate_log_data(generator, scale: t.Tuple[float, float], n: int, shuffle:bool=False, gen_type:str ="All", noise_type=None, **kwargs):
     exclude_area = False
     include_area = False
     drop_eta_1 = False
     drop_eta_2 = False
-    add_out_noise = False
-    add_in_noise = False
+    out_noise = False
+    in_noise = False
     discriminant_condition = False
 
     match gen_type.lower():
@@ -59,10 +59,11 @@ def generate_log_data(generator, scale: t.Tuple[float, float], n: int, shuffle:b
     if noise_type is not None:
         match noise_type.lower():
             case "out_noise":
-                add_out_noise = True
+                out_noise = True
                 print("Out noise")
             case "in_noise":
-                add_in_noise = True
+                in_noise = True
+                print("In noise")
             case _:
                 pass
     
@@ -122,31 +123,22 @@ def generate_log_data(generator, scale: t.Tuple[float, float], n: int, shuffle:b
         else:
             raise ValueError("d_condition must be specified when type is d_condition")
     
-    if add_in_noise:
+    if in_noise:
         if "num_samples" in kwargs and "noise" in kwargs:
             num_samples = kwargs["num_samples"]
             noise = kwargs["noise"]
-            linear_scale_1 = (10**log_scale_1)**2
-            linear_scale_2 = (10**log_scale_2)**2
+            etas, G_samples = add_in_noise(generator, np.column_stack((log_scale_1, log_scale_2)), noise, samples=num_samples)
 
-            G_samples = np.zeros((linear_scale_1.shape[0], 3, num_samples + 1))
-
-            for i in range(num_samples):
-                linear_scale_1_noise = linear_scale_1 + np.random.normal(0, noise, linear_scale_1.shape)
-                linear_scale_2_noise = linear_scale_2 + np.random.normal(0, noise, linear_scale_2.shape)
-
-                etas, G_s = generator(linear_scale_1_noise, linear_scale_2_noise)
-                G_samples[:, :, i] = G_s
-            
-            etas, G_s = generator(linear_scale_1, linear_scale_2)
-            G_samples[:, :, num_samples] = G_s
-            
-            return etas, G_samples
-
+            if num_samples > 1:
+                return etas, G_samples
+            else:
+                return etas.squeeze(), G_samples.squeeze()
+        else:
+            raise ValueError("num_samples and noise must be specified when type is in_noise")
 
     etas, G_s = generator((10**log_scale_1)**2, (10**log_scale_2)**2)
 
-    if add_out_noise:
+    if out_noise:
         if "noise" in kwargs:
             noise = kwargs["noise"]
             G_s += np.random.normal(0, noise, G_s.shape)
@@ -158,8 +150,6 @@ def generate_log_data(generator, scale: t.Tuple[float, float], n: int, shuffle:b
         etas[:, 0] = 0
     if drop_eta_2:
         etas[:, 1] = 0
-    
-
 
     if shuffle:
         total = np.concatenate((etas, G_s), axis=1)
@@ -168,6 +158,22 @@ def generate_log_data(generator, scale: t.Tuple[float, float], n: int, shuffle:b
         G_s = total[:, 2:]
     
     return etas, G_s
+
+
+def add_in_noise(generator, etas, noise, samples=1):
+    linear_scale_1 = (10**etas[:, 0])**2
+    linear_scale_2 = (10**etas[:, 1])**2
+
+    G_samples = np.zeros((linear_scale_1.shape[0], 3, samples))
+
+    for i in range(samples):
+        linear_scale_1_noise = linear_scale_1 + np.random.normal(0, noise, linear_scale_1.shape)
+        linear_scale_2_noise = linear_scale_2 + np.random.normal(0, noise, linear_scale_2.shape)
+
+        etas, G_s = generator(linear_scale_1_noise, linear_scale_2_noise)
+
+    return np.concat([linear_scale_1.reshape(-1,1), linear_scale_2.reshape(-1,1)], axis=1), G_samples
+
     
 '''
 Custom scaler class that applies a log transformation to the input data
