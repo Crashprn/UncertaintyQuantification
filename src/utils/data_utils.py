@@ -169,8 +169,11 @@ def add_in_noise(generator, etas, noise, samples=1):
     for i in range(samples):
         linear_scale_1_noise = linear_scale_1 + np.random.normal(0, noise, linear_scale_1.shape)
         linear_scale_2_noise = linear_scale_2 + np.random.normal(0, noise, linear_scale_2.shape)
+        linear_scale_1_noise = np.clip(linear_scale_1_noise, 1e-8, None)
+        linear_scale_2_noise = np.clip(linear_scale_2_noise, 1e-8, None)
 
         etas, G_s = generator(linear_scale_1_noise, linear_scale_2_noise)
+        G_samples[:, :, i] = G_s
 
     return np.concat([linear_scale_1.reshape(-1,1), linear_scale_2.reshape(-1,1)], axis=1), G_samples
 
@@ -198,7 +201,7 @@ class CustomScalerX:
 
         return X_new
 
-    def inverse_transform(self, X, y):
+    def inverse_transform(self, X):
         x = self.scaler.inverse_transform(X)
         
         x = np.exp(X)

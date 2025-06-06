@@ -1,4 +1,3 @@
-# %%
 ## Standard GP
 import numpy as np
 import gpytorch

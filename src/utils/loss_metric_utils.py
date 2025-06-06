@@ -168,11 +168,12 @@ class BetaNLL(nn.Module):
     def __init__(self, beta=1, *args, **kwargs):
         super(BetaNLL, self).__init__()
         self.beta = beta
+        self.var_reg_lam = 0.1
 
     def forward(self, y_pred, y_true):
         y_predictions, y_variance = y_pred 
 
-        loss = 0.5 * ((y_predictions - y_true) ** 2 / (y_variance) + torch.log(y_variance))
+        loss = 0.5 * ((y_predictions - y_true) ** 2 / (y_variance) + 3*torch.log(y_variance))
 
         if self.beta > 0:
             loss = loss * (y_variance.detach() ** self.beta)

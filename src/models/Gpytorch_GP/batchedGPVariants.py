@@ -28,19 +28,17 @@ class GPModel(ApproximateGP):
             batch (int): The number of GPs to train independently in the batch [B]
         """
         outputscale_constraint = Interval(0.05, 20.0)
-        noise_constraint = Interval(1e-8, 0.2)
+        noise_constraint = Interval(1e-8, 0.1)
         lengthscale_constraint = Interval(0.005, 10.0)  
 
         variational_distribution = CholeskyVariationalDistribution(inducing_points.size(0))
         variational_strategy = VariationalStrategy(self, inducing_points, variational_distribution, learn_inducing_locations=learn_inducing)
         super(GPModel, self).__init__(variational_strategy)
-        self.mean_module = gpytorch.means.ConstantMean(batch_shape=torch.Size([batch]))
+        self.mean_module = gpytorch.means.ConstantMean(batch_shape=torch.Size([batch]), dtype=torch.float)
         self.base_kernel = gpytorch.kernels.MaternKernel(lengthscale_constraint=lengthscale_constraint,nu=2.5,ard_num_dims=input_dims,batch_shape=torch.Size([batch]))
-        self.covar_module = gpytorch.kernels.ScaleKernel(self.base_kernel,batch_shape=torch.Size([batch]),outputscale_constraint=outputscale_constraint) #
+        self.covar_module = gpytorch.kernels.ScaleKernel(self.base_kernel, batch_shape=torch.Size([batch]), outputscale_constraint=outputscale_constraint) #
         self.likelihood = gpytorch.likelihoods.GaussianLikelihood(noise_constraint=noise_constraint)
         
-        #self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernel(ard_num_dims=input_dims, batch_shape=torch.Size([batch])), batch_shape=torch.Size([batch]))
-        #self.likelihood = gpytorch.likelihoods.GaussianLikelihood()
     def forward(self, x):
         """Forward evaluation of the GP model
 
@@ -70,8 +68,8 @@ class GPModel(ApproximateGP):
             for x_batch, y_batch in test_loader:
                 preds = self.likelihood(self(x_batch))
                 if n_samples is None:
-                    mus.append(preds.mean)
-                    variances.append(preds.variance)
+                    mus.append(preds.mean.flatten())
+                    variances.append(preds.variance.flatten())
                 else:
                     samples.append(preds.sample(torch.Size((n_samples,))))
             

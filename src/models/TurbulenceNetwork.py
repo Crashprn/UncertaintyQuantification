@@ -70,8 +70,7 @@ class TurbulenceNetwork(nn.Module):
         if self.heteroscedastic and noise:
             mu = out[:, :self.output_dim//2]
             sigma = out[:, self.output_dim//2:]
-            sigma = torch.exp(sigma)
-            return mu, sigma
+            return mu, torch.exp(sigma)
         elif self.heteroscedastic and not noise:
             return out[:, :self.output_dim//2]
         elif self.homoscedastic and noise:
@@ -94,7 +93,7 @@ class TurbulenceNetworkBayesian(PyroModule):
             layer_prior=(0,1), 
             output_prior_conc_rate=(3.0, 1.0),
             activation=nn.ReLU,
-            train_noise=False
+            noise="none"
         ) -> None:
         super().__init__()
         self.input_dim = torch.tensor(input_dim , device=device)
@@ -104,7 +103,10 @@ class TurbulenceNetworkBayesian(PyroModule):
         self.output_prior_conc_rate = output_prior_conc_rate
         self.data_size = data_size
         self.activation = activation
-        self.train_noise = train_noise
+        self.noise = noise
+
+        if self.noise == "heteroscedastic":
+            self.output_dim *= 2 # double output dimension for heteroscedastic noise
 
         layers = []
 
@@ -142,15 +144,18 @@ class TurbulenceNetworkBayesian(PyroModule):
         for i in range(len(self.layers)):
             x = self.layers[i](x)
 
-        mu = x
-
-        if self.train_noise:
+        if self.noise == "homoscedastic":
+            mu = x
             sigma = pyro.sample("sigma", dist.Gamma(self.output_prior_conc_rate[0], self.output_prior_conc_rate[1]).expand([self.output_dim]).to_event(1))
             sigma = torch.diag(sigma**2)
+        elif self.noise == "heteroscedastic":
+            mu = x[:, :self.output_dim//2]
+            sigma = torch.diag_embed(torch.exp(x[:, self.output_dim//2:]))
         else:
+            mu = x
             sigma = torch.eye(self.output_dim, device=self.device)
 
         with pyro.plate("data", size=self.data_size, subsample_size=x.shape[0]):
             obs = pyro.sample("obs", dist.MultivariateNormal(mu, covariance_matrix=sigma), obs=y)
 
-        return mu
+        return x

@@ -56,7 +56,7 @@ class standardGP():
         Returns:
             model: The trained GP model as a gpytorch object    
         """
-        model = GPModel(inducing_points=self.initial_inducing_pts, input_dims=self.num_dim, learn_inducing=self.learn_inducing, batch=self.num_GPs).to(self.device)
+        model = GPModel(inducing_points=self.initial_inducing_pts, input_dims=self.num_dim, learn_inducing=self.learn_inducing, batch=self.num_GPs).to(self.device, dtype=torch.float64)
         if model_params is not None:
             model.load_state_dict(model_params)
         if not train_noise:
@@ -70,11 +70,12 @@ class standardGP():
             loss = -mll(output, self.train_y).sum()
             loss.backward()
             print('Iter %d/%d - Loss: %.3f   ' % (
-                i + 1, epochs, loss.item(),
+                i + 1, epochs, loss.detach().item(),
             ))
             optimizer.step()
         model.eval()
         return model
+
     def predict(self, test_x, model, batch_size=1, n_samples=None):
         """Predict using the GP model
 

@@ -140,3 +140,37 @@ def convert_torch_to_numpy(path):
 
 
     pickle.dump(new_dict, open(path.replace(".pt", ".pkl"), "wb"))
+
+'''
+Function to form a total number of samples in a batched fashion for predictive inference using Pyro.
+Parameters:
+model: Pyro model
+    The Pyro model to be used for inference.
+guide: Pyro guide
+    The Pyro guide to be used for inference.
+x_data: torch.Tensor
+    Input data for which predictions are to be made.
+total: int
+    Total number of samples to be generated.
+batch_size: int
+    Number of samples to be generated in each batch.
+sites: list
+    List of sites to return in the predictive samples.
+Returns:
+total_dict: dict
+    Dictionary containing the predictive samples for each site, concatenated across batches.
+'''
+def batch_predictive(model, guide, x_data, total, batch_size, sites):
+    predictive = pyro.infer.Predictive(model, guide=guide, num_samples=batch_size, return_sites=sites)
+    total_dict = {}
+    for _ in range(total // batch_size):
+        prediction_dict = predictive(x_data)
+        for key in prediction_dict:
+            if key not in total_dict:
+                total_dict[key] = []
+            total_dict[key].append(prediction_dict[key].cpu().detach())
+    
+    for key in total_dict:
+        total_dict[key] = torch.cat(total_dict[key], dim=0).numpy()
+
+    return total_dict
